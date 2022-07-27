@@ -10,6 +10,8 @@ project(
 set(SOURCE
     ${SOURCE}
     src/console/console.cpp
+    src/drivers/epaper.cpp
+    src/drivers/ws2812.cpp
     src/logger.cpp
     )   
 
@@ -18,6 +20,8 @@ set(HEADERS
     ${HEADERS}
     include/common/console/console.h
     include/common/logger.h
+    include/common/drivers/epaper.h
+    include/common/drivers/ws2812.h
     )   
 
 add_library(
@@ -26,10 +30,19 @@ add_library(
     ${HEADERS}
     )   
 
+pico_generate_pio_header(
+    ${PROJECT_NAME} 
+        ${CMAKE_CURRENT_LIST_DIR}/pio/ws2812.pio
+    UTPUT_DIR 
+        ${CMAKE_CURRENT_LIST_DIR}/generated
+)
+
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
         pico_stdlib
+        hardware_spi
+        hardware_pio
     )
 
 # Specifies include directories to use when compiling a given target
