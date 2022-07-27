@@ -90,8 +90,8 @@ void DrvEPaper::initialize()
     write(DATA, 0x00);
 
     while(isBusy()) {
-        sleep_us(50);
-        LOG_TRACE("Display busy\n");
+        sleep_us(100);
+        // LOG_TRACE("Display busy\n");
     }
     sleep_ms(200);
 }
@@ -110,7 +110,7 @@ void DrvEPaper::write(uint8_t type, uint8_t byte)
     if(written != 1) {
         LOG_WARN("Failed to write 0x%02x\n", byte);
     } else {
-        LOG_DEBUG("Wrote (%d) 0x%02X\n", type, byte);
+        // LOG_DEBUG("Wrote (%d) 0x%02X\n", type, byte);
     }
 
     gpio_put(mPinChipSelect, 1);
@@ -120,4 +120,30 @@ bool DrvEPaper::isBusy()
 {
     gpio_set_dir(mPinBusy, GPIO_IN);
     return gpio_get(mPinBusy);
+}
+
+void DrvEPaper::fillScreen(uint8_t byte)
+{
+    unsigned int i;	
+    write(COMMAND, WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+    for(i = 0; i < 5000; i++)
+    {               
+        write(DATA, byte);
+    }
+    
+    // write(COMMAND, WRITE_RAM_RED);   //write RAM for black(0)/white (1)
+    // for(i = 0; i < 5000; i++)
+    // {               
+    //     write(DATA, 0x55);
+    // }
+
+    write(COMMAND, Command::DISPLAY_UPDATE); //Display Update Control
+    write(DATA, 0xF7);   
+    write(COMMAND, Command::MASTER_ACTIVATION);  //Activate Display Update Sequence
+
+    while(isBusy()) {
+        sleep_us(100);
+        // LOG_TRACE("Display busy\n");
+    }
+    sleep_ms(200);
 }

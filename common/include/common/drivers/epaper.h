@@ -43,7 +43,7 @@ public:
     // void read(uint8_t cmd, uint8_t *data, uint32_t bytes);
     void reset();
     void sleep();
-    void fill_screen(uint8_t byte);
+    void fillScreen(uint8_t byte);
 
     bool isBusy();
 
