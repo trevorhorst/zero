@@ -22,6 +22,7 @@ set(HEADERS
     include/common/logger.h
     include/common/drivers/epaper.h
     include/common/drivers/ws2812.h
+    include/common/version.h
     )   
 
 add_library(
@@ -29,6 +30,8 @@ add_library(
     ${SOURCE}
     ${HEADERS}
     )   
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC COMMON_VERSION="${PROJECT_VERSION}")
 
 pico_generate_pio_header(
     ${PROJECT_NAME} 

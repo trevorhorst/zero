@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(
     epaper
-    DESCRIPTION "Example Library"
+    DESCRIPTION "E Paper Project Library"
+    VERSION 0.0.2
     LANGUAGES C CXX ASM
     )   
 
@@ -22,6 +23,8 @@ add_library(
     ${SOURCE}
     ${HEADERS}
     )   
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE EPAPER_VERSION="${PROJECT_VERSION}")
 
 target_link_libraries(
     ${PROJECT_NAME}

@@ -100,9 +100,10 @@ void Application::initialize()
 int32_t Application::run()
 {
     int32_t error = 0;
-
     initialize();
-
+    LOG_INFO("Project Version: %s\n", EPAPER_VERSION);
+    LOG_INFO(" Common Version: %s\n", COMMON_VERSION);
+    LOG_INFO("       App Size: %d bytes\n", sizeof(Application));
     console_run();
     return 0;
 }

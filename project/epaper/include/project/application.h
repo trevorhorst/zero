@@ -8,8 +8,13 @@
 #include "common/drivers/epaper.h"
 #include "common/drivers/ws2812.h"
 #include "common/logger.h"
+#include "common/version.h"
 
 #define UNIT_MHZ(x) x * 1000000
+
+#ifndef EPAPER_VERSION
+#define EPAPER_VERSION "Not Found"
+#endif
 
 class Application
 {
@@ -24,6 +29,9 @@ class Application
     static const uint32_t neopixel_num_leds;
     static const uint32_t neopixel_max_brightness;
 public:
+    /**
+     * @brief Construct a new Application object
+     */
     Application();
 
     /**
