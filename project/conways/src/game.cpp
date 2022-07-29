@@ -50,7 +50,7 @@ void conwaysRun()
         }
 
         // Simulate the new generation
-        printf("Generation: %d\n", gen++);
+        // printf("Generation: %d\n", gen++);
         checkRamBoard(cur->ram, nxt->ram, false);
 
         // Print the current generation and the board

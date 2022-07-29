@@ -26,12 +26,13 @@ add_library(
     ${HEADERS}
     )   
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE EPAPER_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE CONWAYS_VERSION="${PROJECT_VERSION}")
 
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
         common
+        pico_multicore
     )
 
 # Specifies include directories to use when compiling a given target

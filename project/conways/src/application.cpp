@@ -97,20 +97,20 @@ void Application::initialize()
 
 void Application::initializeI2C()
 {
-    printf("Initializing I2C...\n");
+    LOG_INFO("Initializing I2C...\n");
     i2c_init(i2c1, I2C_BUS_SPEED_KHZ(1000));
     gpio_set_function(pin_i2c1_sda, GPIO_FUNC_I2C);
     gpio_set_function(pin_i2c1_scl, GPIO_FUNC_I2C);
     gpio_pull_up(pin_i2c1_sda);
     gpio_pull_up(pin_i2c1_scl);
 
-    i2c_bus_scan(i2c1);
+    // i2c_bus_scan(i2c1);
 }
  
 void Application::initializeDisplay()
 {
-    printf("Initializing display...\n");
-    printf("Display @ 0x%02X\n", ssd1306_display_addr);
+    LOG_INFO("Initializing display...\n");
+    LOG_INFO("Display @ 0x%02X\n", ssd1306_display_addr);
     mDisplay.initialize();
 
     // Flash display so we know it's alive
@@ -125,7 +125,11 @@ int32_t Application::run()
     initialize();
     
     conwaysSetDisplay(&mDisplay);
-    conwaysRun();
+    multicore_launch_core1(conwaysRun);
+    
+    LOG_INFO("Conways Version: %s\n", CONWAYS_VERSION);
+    LOG_INFO(" Common Version: %s\n", COMMON_VERSION);
+    console_run();
 
     return error;
 }

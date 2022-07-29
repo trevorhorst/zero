@@ -4,11 +4,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
+#include "pico/multicore.h"
 #include "hardware/i2c.h"
 
+#include "common/console/console.h"
 #include "common/drivers/ssd1306.h"
+#include "common/logger.h"
 
 #include "project/game.h"
+
+#ifndef CONWAYS_VERSION
+#define CONWAYS_VERSION "Not Found"
+#endif // CONWAYS_VERSION
 
 class Application
 {
