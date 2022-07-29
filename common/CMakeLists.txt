@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     common
     DESCRIPTION "RP2040 Common Library"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C CXX ASM
 )
 
@@ -11,6 +11,7 @@ set(SOURCE
     ${SOURCE}
     src/console/console.cpp
     src/drivers/epaper.cpp
+    src/drivers/ssd1306.cpp
     src/drivers/ws2812.cpp
     src/logger.cpp
     )   
@@ -21,6 +22,7 @@ set(HEADERS
     include/common/console/console.h
     include/common/logger.h
     include/common/drivers/epaper.h
+    include/common/drivers/ssd1306.h
     include/common/drivers/ws2812.h
     include/common/version.h
     )   
@@ -45,6 +47,7 @@ target_link_libraries(
     PUBLIC
         pico_stdlib
         hardware_spi
+        hardware_i2c
         hardware_pio
     )
 
