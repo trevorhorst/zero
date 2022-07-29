@@ -7,6 +7,8 @@
 #include "pico/multicore.h"
 #include "hardware/i2c.h"
 
+#include "common/command/command_handler.h"
+#include "common/command/command_help.h"
 #include "common/console/console.h"
 #include "common/drivers/ssd1306.h"
 #include "common/logger.h"
@@ -32,12 +34,15 @@ public:
     void initialize();
     void initializeI2C();
     void initializeDisplay();
+    void initializeConsole();
 
     int32_t run();
 
 private:
     SSD1306 mDisplay;
 
+    CommandHandler mHandler;
+    CommandHelp mCmdHelp;
 };
 
 #endif // CONWAYS_APPLICATION_H

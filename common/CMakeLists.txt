@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     common
     DESCRIPTION "RP2040 Common Library"
-    VERSION 0.1.0
+    VERSION 0.2.0
     LANGUAGES C CXX ASM
 )
 
@@ -10,10 +10,16 @@ project(
 set(SOURCE
     ${SOURCE}
     src/console/console.cpp
+    src/command/command.cpp
+    src/command/command_handler.cpp
+    src/command/command_help.cpp
+    src/control/control.cpp
     src/drivers/epaper.cpp
     src/drivers/ssd1306.cpp
     src/drivers/ws2812.cpp
+    src/json/cjson.cpp
     src/logger.cpp
+    src/types.cpp
     )   
 
 # List of header files
@@ -21,9 +27,17 @@ set(HEADERS
     ${HEADERS}
     include/common/console/console.h
     include/common/logger.h
+    include/common/command/command.h
+    include/common/command/command_handler.h
+    include/common/command/command_help.h
+    include/common/command/command_template.h
+    include/common/control/control.h
+    include/common/control/control_template.h
     include/common/drivers/epaper.h
     include/common/drivers/ssd1306.h
     include/common/drivers/ws2812.h
+    include/common/json/cjson.h
+    include/common/types.h
     include/common/version.h
     )   
 

@@ -93,6 +93,7 @@ void Application::initialize()
 
     initializeI2C();
     initializeDisplay();
+    initializeConsole();
 }
 
 void Application::initializeI2C()
@@ -117,6 +118,18 @@ void Application::initializeDisplay()
     mDisplay.fill_screen(0xFF);
     sleep_ms(500);
     mDisplay.fill_screen(0x00);
+}
+
+void Application::initializeConsole()
+{
+    mCmdHelp.addControlObject(&mHandler);
+    // mCmdPixel.addControlObject(&mNeopixel);
+
+    mHandler.addCommand(&mCmdHelp);
+    // mHandler.addCommand(&mCmdPixel);
+    // mHandler.addCommand(&mCmdI2CDetect);
+
+    console_set_command_handler(&mHandler);
 }
 
 int32_t Application::run()
