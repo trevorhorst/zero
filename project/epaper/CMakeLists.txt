@@ -10,12 +10,20 @@ project(
 set( SOURCE
     ${SOURCE}
     src/application.cpp
+    src/command/command_facts.cpp
+    src/draw/draw.cpp
+    src/draw/font.cpp
+    src/facts.cpp
     )   
 
 # List of header files
 set( HEADERS
     ${HEADERS}
     include/project/application.h
+    include/project/command/command_facts.h
+    include/project/draw/draw.h
+    include/project/draw/font.h
+    include/project/facts.h
     )   
 
 add_library(
@@ -30,6 +38,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
         common
+        pico_multicore
     )
 
 # Specifies include directories to use when compiling a given target

@@ -39,7 +39,7 @@ if(DEFINED ENV{CONTROL_PROJECT})
     set( CONTROL_PROJECT "$ENV{CONTROL_PROJECT}" )
 else()
     message("No project set, building example project")
-    set( CONTROL_PROJECT "conways" )
+    set( CONTROL_PROJECT "epaper" )
 endif()
 message("Building ${CONTROL_PROJECT}")
 

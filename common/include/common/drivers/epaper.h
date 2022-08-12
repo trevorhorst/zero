@@ -6,6 +6,9 @@
 
 #include "common/logger.h"
 
+#define EPD_1IN54_V2_WIDTH       200
+#define EPD_1IN54_V2_HEIGHT      200
+
 class DrvEPaper
 {
 public:
@@ -42,7 +45,9 @@ public:
     // void write(uint8_t cmd, const uint8_t *data, const uint32_t bytes);
     // void read(uint8_t cmd, uint8_t *data, uint32_t bytes);
     void reset();
+    void wake();
     void sleep();
+    void display(uint8_t *image);
     void fillScreen(uint8_t byte);
 
     bool isBusy();

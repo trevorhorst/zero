@@ -3,7 +3,6 @@
 
 #include "pico/stdlib.h"
 
-#include "common/command/command_handler.h"
 #include "common/console/console.h"
 #include "common/logger.h"
 

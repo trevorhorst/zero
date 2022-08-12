@@ -5,6 +5,8 @@
 #include <string.h>
 #include <vector>
 
+#include "common/command/command_handler.h"
+
 void console_set_command_handler(CommandHandler *handler);
 void console_run();
 

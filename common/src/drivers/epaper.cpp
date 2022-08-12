@@ -33,6 +33,16 @@ void DrvEPaper::reset()
     }
 }
 
+void DrvEPaper::wake()
+{
+    write(COMMAND, DISPLAY_UPDATE);
+    write(DATA, 0xC7);
+    write(COMMAND, MASTER_ACTIVATION);
+    while(isBusy()) {
+        sleep_ms(200);
+    }
+}
+
 void DrvEPaper::sleep() 
 {
     //After this command initiated, the chip will
@@ -120,6 +130,25 @@ bool DrvEPaper::isBusy()
 {
     gpio_set_dir(mPinBusy, GPIO_IN);
     return gpio_get(mPinBusy);
+}
+
+void DrvEPaper::display(uint8_t *image)
+{
+    uint8_t Width, Height;
+    Width = (EPD_1IN54_V2_WIDTH % 8 == 0)? (EPD_1IN54_V2_WIDTH / 8 ): (EPD_1IN54_V2_WIDTH / 8 + 1);
+    Height = EPD_1IN54_V2_HEIGHT;
+
+    LOG_INFO("Width: %d, Hwight: %d\n", Width, Height);
+
+    uint32_t Addr = 0;
+    write(COMMAND, WRITE_RAM_BW);
+    for(uint16_t j = 0; j < Height; j++) {
+        for (uint16_t i = 0; i < Width; i++) {
+            Addr = i + j * Width;
+            write(DATA, image[Addr]);
+        }
+    }
+    wake();
 }
 
 void DrvEPaper::fillScreen(uint8_t byte)
