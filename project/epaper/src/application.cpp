@@ -6,6 +6,7 @@ const uint32_t Application::pin_spi0_sck        = 2;    // CLK
 const uint32_t Application::pin_spi0_mosi       = 3;    // DIN
 const uint32_t Application::pin_display_busy    = 4;    // BUSY
 const uint32_t Application::pin_display_reset   = 5;    // RST
+const uint32_t Application::pin_clear_display   = 6;
 const uint32_t Application::pin_generate_fact   = 7;
 const uint32_t Application::pin_neopixel        = 16;
 
@@ -13,6 +14,7 @@ const uint32_t Application::neopixel_num_leds       = 1;
 const uint32_t Application::neopixel_max_brightness = 25;
 
 static bool draw_new_fact = false;
+static bool flag_clear_display = false;
 static uint32_t debounce_generate_fact = to_ms_since_boot(get_absolute_time());
 static const uint32_t debounce_delay_time = 1000;
 
@@ -25,6 +27,10 @@ void generate_fact(uint gpio, uint32_t events)
             draw_new_fact = true;
         } else {
             printf("Core busy\n");
+        }
+    } else if(gpio == Application::pin_clear_display) {
+        if((currentTime - debounce_generate_fact) > debounce_delay_time) {
+            flag_clear_display = true;
         }
     }
 }
@@ -73,6 +79,7 @@ void Application::initialize()
 
     // Initialize IRQ
     gpio_set_irq_enabled_with_callback(pin_generate_fact, GPIO_IRQ_EDGE_RISE, true, &generate_fact);
+    gpio_set_irq_enabled_with_callback(pin_clear_display, GPIO_IRQ_EDGE_RISE, true, &generate_fact);
 
     // Initialize SPI pins
     gpio_set_function(pin_spi0_sck, GPIO_FUNC_SPI);
@@ -152,8 +159,20 @@ void Application::drawFact()
     Paint_DrawString_EN(0, 0, title, &Font16, WHITE, BLACK);
     Paint_DrawLine(0, 16, 200, 16, BLACK, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
     Paint_DrawString_EN(0, 18, Snapple::facts[fact], &Font16, WHITE, BLACK);
+    
+    // Draw and then put display to sleep
     mEPaper.reset();
-    // mEPaper.wake();
+    mEPaper.display(mImage);
+    mEPaper.sleep();
+}
+
+void Application::clearDisplay()
+{
+    Paint_NewImage(mImage, EPD_1IN54_V2_WIDTH, EPD_1IN54_V2_HEIGHT, 270, WHITE);
+    Paint_Clear(WHITE);
+    
+    // Draw and then put display to sleep
+    mEPaper.reset();
     mEPaper.display(mImage);
     mEPaper.sleep();
 }
@@ -172,6 +191,11 @@ int32_t Application::run()
         if(draw_new_fact) {
             drawFact();
             draw_new_fact = false;
+        }
+
+        if(flag_clear_display) {
+            clearDisplay();
+            flag_clear_display = false;
         }
     }
 

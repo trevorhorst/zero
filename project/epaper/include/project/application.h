@@ -32,6 +32,7 @@ public:
     static const uint32_t pin_spi0_mosi;
     static const uint32_t pin_display_busy;
     static const uint32_t pin_display_reset;
+    static const uint32_t pin_clear_display;
     static const uint32_t pin_generate_fact;
     static const uint32_t pin_neopixel;
 
@@ -48,6 +49,7 @@ public:
     void initializeDrawing();
 
     void drawFact();
+    void clearDisplay();
 
     /**
      * @brief Main application thread
