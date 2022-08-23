@@ -1,0 +1,3 @@
+/home/trevorh/Projects/zero/tools/bitmapreader/CMakeFiles/rebuild_cache.dir
+/home/trevorh/Projects/zero/tools/bitmapreader/CMakeFiles/edit_cache.dir
+/home/trevorh/Projects/zero/tools/bitmapreader/CMakeFiles/bitmapreader.dir

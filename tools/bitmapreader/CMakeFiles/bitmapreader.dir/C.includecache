@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/trevorh/Projects/zero/tools/bitmapreader/bmpspritesheet.h
+stdio.h
+-
+stdlib.h
+-
+stdint.h
+-
+
+/home/trevorh/Projects/zero/tools/bitmapreader/main.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+errno.h
+-
+stdint.h
+-
+bmpspritesheet.h
+/home/trevorh/Projects/zero/tools/bitmapreader/bmpspritesheet.h
+
