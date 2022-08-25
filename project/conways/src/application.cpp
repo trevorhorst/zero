@@ -7,6 +7,12 @@ static uint32_t debounce_reset_button = to_ms_since_boot(get_absolute_time());
 static uint32_t debounce_speed_button = to_ms_since_boot(get_absolute_time());
 static const uint32_t debounce_delay_time = 500; // Delay for every push button may vary
 
+int32_t application_run()
+{
+    Application app;
+    return app.run();
+}
+
 void gpio_callback(uint gpio, uint32_t events) {
     // Put the GPIO event(s) that just happened into event_str
     // so we can print it

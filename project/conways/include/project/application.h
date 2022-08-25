@@ -19,6 +19,8 @@
 #define CONWAYS_VERSION "Not Found"
 #endif // CONWAYS_VERSION
 
+int32_t application_run();
+
 class Application
 {
 public:

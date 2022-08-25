@@ -21,6 +21,8 @@
 #define EPAPER_VERSION "Not Found"
 #endif
 
+int32_t application_run();
+
 class Application
 {
     static const uint32_t neopixel_num_leds;

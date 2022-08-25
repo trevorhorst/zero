@@ -1,38 +1,45 @@
 cmake_minimum_required(VERSION 3.13)
 project(
-    conways
-    DESCRIPTION "Conways Project Library"
-    VERSION 0.1.0
+    pokedex
+    DESCRIPTION "Pokedex Project Library"
+    VERSION 0.0.1
     LANGUAGES C CXX ASM
-    )   
+)
 
-# List of source files
 set( SOURCE
     ${SOURCE}
-    src/application.cpp
-    src/game.cpp
-    )   
+        src/application.cpp
+        src/bmpspritesheet.cpp
+        src/draw/draw.cpp
+        src/draw/font.cpp
+        src/resources.cpp
+        src/resources/red_blue.bmp.s
+)
 
-# List of header files
 set( HEADERS
     ${HEADERS}
-    include/project/application.h
-    include/project/game.h
-    )   
+        include/project/application.h
+        include/project/bmpspritesheet.h
+        include/project/draw/draw.h
+        include/project/draw/font.h
+        include/project/resources.h
+)
 
 add_library(
     ${PROJECT_NAME} STATIC
     ${SOURCE}
     ${HEADERS}
-    )   
+)
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE CONWAYS_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(
+    ${PROJECT_NAME} PRIVATE 
+        POKEDEX_VERSION="${PROJECT_VERSION}"
+        )
 
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
         common
-        pico_multicore
     )
 
 # Specifies include directories to use when compiling a given target

@@ -18,6 +18,12 @@ static bool flag_clear_display = false;
 static uint32_t debounce_generate_fact = to_ms_since_boot(get_absolute_time());
 static const uint32_t debounce_delay_time = 1000;
 
+int32_t application_run()
+{
+    Application app;
+    return app.run();
+}
+
 void generate_fact(uint gpio, uint32_t events)
 {
     uint32_t currentTime = to_ms_since_boot(get_absolute_time());
