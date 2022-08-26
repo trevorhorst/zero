@@ -73,7 +73,7 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, char *resource, unsigned int resourc
  */
 int8_t bmpss_deinitialize(BmpSpriteSheet *ss);
 
-int32_t bmpss_scanline_width(BmpSpriteSheet *ss);
+int32_t bmpss_scanline_width(Bitmap *bmp);
 
 /**
  * @brief  Prints the entire sprite sheet to console for easy viewing

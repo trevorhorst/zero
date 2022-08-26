@@ -10,6 +10,7 @@ set( SOURCE
     ${SOURCE}
         src/application.cpp
         src/bmpspritesheet.cpp
+        src/draw/canvas.cpp
         src/draw/draw.cpp
         src/draw/font.cpp
         src/resources.cpp
@@ -20,6 +21,7 @@ set( HEADERS
     ${HEADERS}
         include/project/application.h
         include/project/bmpspritesheet.h
+        include/project/draw/canvas.h
         include/project/draw/draw.h
         include/project/draw/font.h
         include/project/resources.h
@@ -40,6 +42,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
         common
+        pico_multicore
     )
 
 # Specifies include directories to use when compiling a given target

@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.13)
-project(appd)
+project(
+    appd
+    DESCRIPTION "Application"
+    VERSION 1.0.0
+    LANGUAGES C CXX ASM
+)
 # enable_language( C ASM )
 
 add_executable(${PROJECT_NAME} main.cpp)

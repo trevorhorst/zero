@@ -131,15 +131,15 @@ int8_t bmpss_deinitialize(BmpSpriteSheet *ss)
     return success;
 }
 
-int32_t bmpss_scanline_width(BmpSpriteSheet *ss)
+int32_t bmpss_scanline_width(Bitmap *bitmap)
 {
-    int32_t scanline_width = (((ss->bitmap.info_header.bitsPerPixel * ss->bitmap.info_header.width) + 31) / 32) * 4;
+    int32_t scanline_width = (((bitmap->info_header.bitsPerPixel * bitmap->info_header.width) + 31) / 32) * 4;
     return scanline_width;
 }
 
 void bmpss_print_sheet(BmpSpriteSheet *ss)
 {
-    int32_t scanline_width = bmpss_scanline_width(ss);
+    int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
     for(int32_t h = ss->bitmap.info_header.height; h >= 0; h--) {
         for(int32_t i = 0; i < scanline_width; i++) {
             bmpss_print_pixel(ss->bitmap.pixel_data[(h * scanline_width) + i]);
@@ -150,7 +150,7 @@ void bmpss_print_sheet(BmpSpriteSheet *ss)
 
 void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite)
 {
-    int32_t scanline_width = bmpss_scanline_width(ss);
+    int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
     for(int32_t h = (sprite->height - 1); h >= 0; h--) {
         for(int32_t w = 0; w < ((sprite->width) / 8); w++) {
             int32_t y = (h + sprite->y) * scanline_width;

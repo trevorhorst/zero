@@ -138,8 +138,6 @@ void DrvEPaper::display(uint8_t *image)
     Width = (EPD_1IN54_V2_WIDTH % 8 == 0)? (EPD_1IN54_V2_WIDTH / 8 ): (EPD_1IN54_V2_WIDTH / 8 + 1);
     Height = EPD_1IN54_V2_HEIGHT;
 
-    LOG_INFO("Width: %d, Hwight: %d\n", Width, Height);
-
     uint32_t Addr = 0;
     write(COMMAND, WRITE_RAM_BW);
     for(uint16_t j = 0; j < Height; j++) {

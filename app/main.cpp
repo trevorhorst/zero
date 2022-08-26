@@ -2,6 +2,5 @@
 
 int main(void)
 {
-    Application app;
-    return app.run();
+    return application_run();
 }
