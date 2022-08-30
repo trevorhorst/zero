@@ -13,8 +13,10 @@ set( SOURCE
         src/draw/canvas.cpp
         src/draw/draw.cpp
         src/draw/font.cpp
+        src/pokedex.cpp
         src/resources.cpp
         src/resources/red_blue.bmp.s
+        src/resources/red_blue_font.bmp.s
 )
 
 set( HEADERS
@@ -24,6 +26,7 @@ set( HEADERS
         include/project/draw/canvas.h
         include/project/draw/draw.h
         include/project/draw/font.h
+        include/project/pokedex.h
         include/project/resources.h
 )
 

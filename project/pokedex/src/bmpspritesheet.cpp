@@ -71,7 +71,8 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, const char *filename)
         }
 
         // Malloc memory for the color table that is of variable size
-        uint32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
+        // uint32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
+        uint32_t color_table_size = ss->bitmap.header.dataOffset - (sizeof(BitmapHeader) + sizeof(BitmapInfoHeader));
         ColorTable *color_table = (ColorTable*)malloc(color_table_size);
         fread(color_table, sizeof(char), color_table_size, fp);
         ss->bitmap.color_table = color_table;
@@ -102,7 +103,8 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, char *resource, unsigned int resourc
     bmpss_print_info_header(&(ss->bitmap.info_header));
     
     int32_t header_size = sizeof(BitmapHeader) + sizeof(BitmapInfoHeader);
-    int32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
+    // int32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
+    int32_t color_table_size = ss->bitmap.header.dataOffset - (sizeof(BitmapHeader) + sizeof(BitmapInfoHeader));
     int32_t pixel_data_size = resource_size - ss->bitmap.header.dataOffset;
 
     offset += header_size;

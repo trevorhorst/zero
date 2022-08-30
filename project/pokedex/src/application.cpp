@@ -5,8 +5,8 @@
 
 #include "project/application.h"
 #include "project/bmpspritesheet.h"
-#include "project/draw/draw.h"
 #include "project/draw/canvas.h"
+#include "project/pokedex.h"
 #include "project/resources.h"
 
 #define PIN_DISPLAY_CD      0    // DC
@@ -24,6 +24,12 @@
 
 #define SPRITE_WIDTH    56
 #define SPRITE_HEIGHT   56
+
+#define SPRITE_FONT_WIDTH    8
+#define SPRITE_FONT_HEIGHT   8
+
+#define STR_POKEMON         "POKEMON"
+#define CHAR_TO_SPRITE(x)   (x - 'A') + 1
 
 WS2812 neopixel(PIN_NEOPIXEL, NEOPIXEL_NUM_LEDS, pio0, 0, WS2812::DataFormat::FORMAT_GRB);
 
@@ -100,27 +106,59 @@ int32_t application_run()
     BmpSpriteSheet ss;
     bmpss_initialize(&ss, red_blue_bmp, red_blue_bmp_size);
 
+    BmpSpriteSheet ss_font;
+    bmpss_initialize(&ss_font, red_blue_font_bmp, red_blue_font_bmp_size);
+
     BmpSprite sprite;
     sprite.height = SPRITE_HEIGHT;
     sprite.width = SPRITE_WIDTH;
     sprite.x = 0;
     sprite.y = 0;
+    sprite.invert = 0;
 
     Canvas canvas;
     canvas_initialize(&canvas, EPD_1IN54_V2_HEIGHT, EPD_1IN54_V2_WIDTH);
-    canvas_fill(&canvas, 0xAA);
+    canvas_fill(&canvas, 0xFF);
+    canvas_draw_point(&canvas, 20, 20, CanvasColor::BLACK, CanvasPointSize::PIXEL_4X4);
     printf("Black out the screen\n");
+    paper.display(canvas.image);
+    paper.sleep();
+
+    // sleep_ms(5000);
 
     int32_t dexNumber = 0;
+    int32_t dexChar   = 0;
     multicore_launch_core1(heartbeat);
     
-    int32_t offset_x = ((EPD_1IN54_V2_HEIGHT - SPRITE_HEIGHT) / 2);
-    int32_t offset_y = ((EPD_1IN54_V2_WIDTH - SPRITE_WIDTH) / 2);
+    int32_t offset_x = ((EPD_1IN54_V2_HEIGHT - (SPRITE_HEIGHT * 3)) / 2);
+    int32_t offset_y = ((EPD_1IN54_V2_WIDTH - (SPRITE_WIDTH * 3)) / 2) + 5;
     
+    char pokemon_name[11];
     // Update the pokemon every second
     while(true) {
         dexNumber++;
         printf("Pokedex Number: %d\n", dexNumber);
+        snprintf(pokemon_name, 11, pokedex[dexNumber - 1]);
+
+        uint32_t i = 0;
+        for(i = 0; i < strlen(pokemon_name); i++) {
+            dexChar = CHAR_TO_SPRITE(pokemon_name[i]);
+            if(dexChar >= 0) {
+                // Calculate the x, y coordinates of our pokemon sprite
+                int32_t sheetWidth = ss_font.bitmap.info_header.width / SPRITE_FONT_WIDTH;
+                int32_t sheetHeight = ss_font.bitmap.info_header.height / SPRITE_FONT_HEIGHT;
+                int32_t x = (sheetWidth - ((128 - dexChar) % sheetWidth)) - 1;
+                int32_t y = (128 - dexChar) / sheetWidth;
+                sprite.x = SPRITE_FONT_WIDTH * (x);
+                sprite.y = SPRITE_FONT_HEIGHT * (y);
+                sprite.height = SPRITE_FONT_HEIGHT;
+                sprite.width = SPRITE_FONT_WIDTH;
+                sprite.magnify = 2;
+                printf("sprite %d: (%d, %d)\n", dexChar, sprite.x, sprite.y);
+
+            }
+            canvas_draw_bmp_sprite(&canvas, &(ss_font.bitmap), &sprite, (SPRITE_FONT_WIDTH * i) * sprite.magnify, 5);
+        }
 
         if(dexNumber >= 1 && dexNumber <= 151) {
             // Calculate the x, y coordinates of our pokemon sprite
@@ -130,7 +168,10 @@ int32_t application_run()
             int32_t y = (160 - dexNumber) / sheetWidth;
             sprite.x = SPRITE_WIDTH * (x);
             sprite.y = SPRITE_HEIGHT * (y);
-            printf("(%d, %d)\n", sprite.x, sprite.y);
+            sprite.height = SPRITE_HEIGHT;
+            sprite.width = SPRITE_WIDTH;
+            sprite.magnify = 3;
+            printf("sprite %d: (%d, %d)\n", dexNumber, sprite.x, sprite.y);
         } else {
             dexNumber = 0;
         } 
@@ -141,7 +182,7 @@ int32_t application_run()
         paper.display(canvas.image);
         paper.sleep();
 
-        canvas_fill(&canvas, 0xAA);
+        canvas_fill(&canvas, 0xFF);
         sleep_ms(5000);
     }
 

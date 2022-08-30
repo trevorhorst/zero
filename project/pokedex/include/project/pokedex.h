@@ -1,0 +1,4 @@
+#define POKEDEX_NUM_POKEMON 151
+#define POKEDEX_NAME_MAX    11
+
+extern const char pokedex[POKEDEX_NUM_POKEMON][POKEDEX_NAME_MAX];
