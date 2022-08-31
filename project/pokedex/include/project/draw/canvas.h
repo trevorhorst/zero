@@ -32,7 +32,7 @@ void canvas_fill(Canvas *canvas, uint8_t byte);
 void canvas_print(Canvas *canvas);
 
 
-void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, 
+void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32_t rotate,
                       CanvasColor color);
 
 void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point, 

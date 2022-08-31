@@ -28,10 +28,44 @@
 #define SPRITE_FONT_WIDTH    8
 #define SPRITE_FONT_HEIGHT   8
 
-#define STR_POKEMON         "POKEMON"
+#define STR_POKEMON         "%-10s %03d"
 #define CHAR_TO_SPRITE(x)   (x - 'A') + 1
 
 WS2812 neopixel(PIN_NEOPIXEL, NEOPIXEL_NUM_LEDS, pio0, 0, WS2812::DataFormat::FORMAT_GRB);
+
+void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, BmpSprite *sprite)
+{
+    // Calculate the x, y coordinates of our pokemon sprite
+    int32_t sheetWidth = ss->bitmap.info_header.width / sprite->width;
+    int32_t sheetHeight = ss->bitmap.info_header.height / sprite->height;
+    int32_t sheetSprites = sheetWidth * sheetHeight;
+    int32_t x = (sheetWidth - ((sheetSprites - index) % sheetWidth)) - 1;
+    int32_t y = (sheetSprites - index) / sheetWidth;
+    sprite->x = sprite->width * x;
+    sprite->y = sprite->height * y;
+    // printf("sprite %d: (%d, %d)\n", index, sprite->x, sprite->y);
+}
+
+char index_to_char(uint32_t index)
+{
+    char s = 128; // SPACE sprite
+    if(index >= 'A' && index <= 'Z') {
+        s = (index - 'A') + 1;
+    } else if(index >= 'a' && index <= 'z') {
+        s = (index - 'a') + 1;
+    } else if(index >= '0' && index <= '9') {
+        s = (index + 38) + 1;
+    } else if(index == '\'') {
+        s = 65;
+    } else if(index == '-') {
+        s = 68;
+    } else if(index == '?') {
+        s = 71;
+    } else if(index == '!') {
+        s = 72;
+    }
+    return s;
+}
 
 void heartbeat()
 {
@@ -130,53 +164,56 @@ int32_t application_run()
     int32_t dexChar   = 0;
     multicore_launch_core1(heartbeat);
     
-    int32_t offset_x = ((EPD_1IN54_V2_HEIGHT - (SPRITE_HEIGHT * 3)) / 2);
-    int32_t offset_y = ((EPD_1IN54_V2_WIDTH - (SPRITE_WIDTH * 3)) / 2) + 5;
+
+    uint32_t poke_sprite_magnify = 2;
+    uint32_t offset_x = ((EPD_1IN54_V2_HEIGHT - (SPRITE_HEIGHT * poke_sprite_magnify)) / 2);
+    uint32_t offset_y = ((EPD_1IN54_V2_WIDTH - (SPRITE_WIDTH * poke_sprite_magnify)) / 2) - 10;
     
-    char pokemon_name[11];
+    char pokemon_name[15];
     // Update the pokemon every second
     while(true) {
         dexNumber++;
         printf("Pokedex Number: %d\n", dexNumber);
-        snprintf(pokemon_name, 11, pokedex[dexNumber - 1]);
+        snprintf(pokemon_name, sizeof(pokemon_name), STR_POKEMON, pokedex[dexNumber - 1]->name, dexNumber);
 
         uint32_t i = 0;
         for(i = 0; i < strlen(pokemon_name); i++) {
-            dexChar = CHAR_TO_SPRITE(pokemon_name[i]);
+            dexChar = index_to_char(pokemon_name[i]);
             if(dexChar >= 0) {
-                // Calculate the x, y coordinates of our pokemon sprite
-                int32_t sheetWidth = ss_font.bitmap.info_header.width / SPRITE_FONT_WIDTH;
-                int32_t sheetHeight = ss_font.bitmap.info_header.height / SPRITE_FONT_HEIGHT;
-                int32_t x = (sheetWidth - ((128 - dexChar) % sheetWidth)) - 1;
-                int32_t y = (128 - dexChar) / sheetWidth;
-                sprite.x = SPRITE_FONT_WIDTH * (x);
-                sprite.y = SPRITE_FONT_HEIGHT * (y);
                 sprite.height = SPRITE_FONT_HEIGHT;
                 sprite.width = SPRITE_FONT_WIDTH;
-                sprite.magnify = 2;
-                printf("sprite %d: (%d, %d)\n", dexChar, sprite.x, sprite.y);
+                sprite.magnify = 1;
+                index_to_sprite(dexChar, &ss_font, &sprite);
 
             }
-            canvas_draw_bmp_sprite(&canvas, &(ss_font.bitmap), &sprite, (SPRITE_FONT_WIDTH * i) * sprite.magnify, 5);
+            uint32_t char_offset_x = (((SPRITE_FONT_WIDTH * i) * sprite.magnify) + 1) + (SPRITE_FONT_HEIGHT * 5);
+            uint32_t char_offset_y = 5;
+            canvas_draw_bmp_sprite(&canvas, &(ss_font.bitmap), &sprite, char_offset_x, char_offset_y);
         }
 
-        if(dexNumber >= 1 && dexNumber <= 151) {
-            // Calculate the x, y coordinates of our pokemon sprite
-            int32_t sheetWidth = ss.bitmap.info_header.width / SPRITE_WIDTH;
-            int32_t sheetHeight = ss.bitmap.info_header.height / SPRITE_HEIGHT;
-            int32_t x = (sheetWidth - ((160 - dexNumber) % sheetWidth)) - 1;
-            int32_t y = (160 - dexNumber) / sheetWidth;
-            sprite.x = SPRITE_WIDTH * (x);
-            sprite.y = SPRITE_HEIGHT * (y);
+        if(dexNumber >= 1 && dexNumber <= POKEDEX_NUM_POKEMON) {
             sprite.height = SPRITE_HEIGHT;
             sprite.width = SPRITE_WIDTH;
-            sprite.magnify = 3;
-            printf("sprite %d: (%d, %d)\n", dexNumber, sprite.x, sprite.y);
+            sprite.magnify = poke_sprite_magnify;
+            index_to_sprite(dexNumber, &ss, &sprite);
         } else {
             dexNumber = 0;
         } 
-
         canvas_draw_bmp_sprite(&canvas, &(ss.bitmap), &sprite, offset_x, offset_y);
+
+        for(i = 0; i < strlen(pokedex[dexNumber - 1]->entry); i++) {
+            dexChar = index_to_char(pokedex[dexNumber - 1]->entry[i]);
+            if(dexChar >= 0) {
+                sprite.height = SPRITE_FONT_HEIGHT;
+                sprite.width = SPRITE_FONT_WIDTH;
+                sprite.magnify = 1;
+                index_to_sprite(dexChar, &ss_font, &sprite);
+
+            }
+            uint32_t char_offset_x = (((SPRITE_FONT_WIDTH * (i % 25)) * sprite.magnify) + 1);
+            uint32_t char_offset_y = 160 + ((i / 25) * 8) + 1;
+            canvas_draw_bmp_sprite(&canvas, &(ss_font.bitmap), &sprite, char_offset_x, char_offset_y);
+        }
 
         paper.reset();
         paper.display(canvas.image);
