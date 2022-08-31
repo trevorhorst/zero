@@ -30,6 +30,7 @@
 
 #define STR_POKEMON         "%-10s %03d"
 #define CHAR_TO_SPRITE(x)   (x - 'A') + 1
+#define CHAR_TO_UPPER(x)    (x >= 'a' && x <= 'z') ? x - 0x20 : x
 
 WS2812 neopixel(PIN_NEOPIXEL, NEOPIXEL_NUM_LEDS, pio0, 0, WS2812::DataFormat::FORMAT_GRB);
 
@@ -52,7 +53,7 @@ char index_to_char(uint32_t index)
     if(index >= 'A' && index <= 'Z') {
         s = (index - 'A') + 1;
     } else if(index >= 'a' && index <= 'z') {
-        s = (index - 'a') + 1;
+        s = (index - 'A') + 1;
     } else if(index >= '0' && index <= '9') {
         s = (index + 38) + 1;
     } else if(index == '\'') {
@@ -63,6 +64,24 @@ char index_to_char(uint32_t index)
         s = 71;
     } else if(index == '!') {
         s = 72;
+    } else if(index == '.') {
+        s = 73;
+    } else if(index == 0x01) {
+        // Male symbol
+        s = 80;
+    } else if(index == 0x02) {
+        // Female symbol
+        s = 86;
+    } else if(index == 0x20) {
+        // Space
+        s = 128;
+    } else if(index == 0x2C) {
+        s = 85;
+    } else if(index == 0x82) {
+        // Fancy e 
+        s = 59;
+    } else {
+        printf("Missing character 0x%02X\n", (uint8_t)index);
     }
     return s;
 }
@@ -153,7 +172,7 @@ int32_t application_run()
     Canvas canvas;
     canvas_initialize(&canvas, EPD_1IN54_V2_HEIGHT, EPD_1IN54_V2_WIDTH);
     canvas_fill(&canvas, 0xFF);
-    canvas_draw_point(&canvas, 20, 20, CanvasColor::BLACK, CanvasPointSize::PIXEL_4X4);
+    // canvas_draw_point(&canvas, 20, 20, CanvasColor::BLACK, CanvasPointSize::PIXEL_4X4);
     printf("Black out the screen\n");
     paper.display(canvas.image);
     paper.sleep();
@@ -178,7 +197,7 @@ int32_t application_run()
 
         uint32_t i = 0;
         for(i = 0; i < strlen(pokemon_name); i++) {
-            dexChar = index_to_char(pokemon_name[i]);
+            dexChar = index_to_char(CHAR_TO_UPPER(pokemon_name[i]));
             if(dexChar >= 0) {
                 sprite.height = SPRITE_FONT_HEIGHT;
                 sprite.width = SPRITE_FONT_WIDTH;
