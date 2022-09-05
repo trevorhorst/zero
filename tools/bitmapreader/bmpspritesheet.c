@@ -71,18 +71,19 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, const char *filename)
         }
 
         // Malloc memory for the color table that is of variable size
-        uint32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
+        // uint32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
+        uint32_t color_table_size = ss->bitmap.header.dataOffset - (sizeof(BitmapHeader) + sizeof(BitmapInfoHeader));;
         ColorTable *color_table = (ColorTable*)malloc(color_table_size);
         fread(color_table, sizeof(char), color_table_size, fp);
         ss->bitmap.color_table = color_table;
-        // bmpss_print_raw_data((uint8_t*)ss->bitmap.color_table, color_table_size, 8);
+        bmpss_print_raw_data((uint8_t*)ss->bitmap.color_table, color_table_size, 8);
 
         // Malloc memory for the pixel data that is of variable size
         uint32_t pixel_data_size = ss->bitmap.header.fileSize - ss->bitmap.header.dataOffset;
         uint8_t *pixel_data = (uint8_t*)malloc(pixel_data_size);
         fread(pixel_data, sizeof(char), pixel_data_size, fp);
         ss->bitmap.pixel_data = pixel_data;
-        // bmpss_print_raw_data(ss->bitmap.pixel_data, pixel_data_size, 8);
+        bmpss_print_raw_data(ss->bitmap.pixel_data, pixel_data_size, 8);
     
         fclose(fp);
         fp = NULL;
@@ -115,7 +116,7 @@ int32_t bmpss_scanline_width(BmpSpriteSheet *ss)
 void bmpss_print_sheet(BmpSpriteSheet *ss)
 {
     int32_t scanline_width = bmpss_scanline_width(ss);
-    for(int32_t h = ss->bitmap.info_header.height; h >= 0; h--) {
+    for(int32_t h = (ss->bitmap.info_header.height - 1); h >= 0; h--) {
         for(int32_t i = 0; i < scanline_width; i++) {
             bmpss_print_pixel(ss->bitmap.pixel_data[(h * scanline_width) + i]);
         }
