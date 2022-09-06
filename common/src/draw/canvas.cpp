@@ -142,3 +142,21 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
         }
     }
 }
+
+void canvas_byte_flip(Canvas *canvas)
+{
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t bit = 0;
+    for(y = 0; y < canvas->height; y++) {
+        for(x = 0; x < (canvas->width / 8); x++) {
+            uint8_t byte = canvas->image[x + (y * (canvas->width / 8))];
+            canvas->image[x + (y * (canvas->width / 8))] = 0;
+            for(bit = 0; bit < 8; bit++) {
+                if(byte & (0x1 << bit)) {
+                    canvas->image[x + (y * (canvas->width / 8))] |= (0x80 >> bit);
+                }
+            }
+        }
+    }
+}

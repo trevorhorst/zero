@@ -55,8 +55,8 @@ int32_t application_run()
     sprite.invert = 0;
 
     uint32_t poke_sprite_magnify = 1;
-    uint32_t offset_x = 0; // ((OLED_HEIGHT - (SPRITE_HEIGHT * poke_sprite_magnify)) / 2);
-    uint32_t offset_y = 0; // ((OLED_WIDTH - (SPRITE_WIDTH * poke_sprite_magnify)) / 2) - 10;
+    uint32_t offset_x = ((OLED_WIDTH - (SPRITE_HEIGHT * poke_sprite_magnify)) / 2);
+    uint32_t offset_y = ((OLED_HEIGHT - (SPRITE_WIDTH * poke_sprite_magnify)) / 2);
     
     LOG_INFO("Initializing Display...\n");
     #ifdef OOP
@@ -91,8 +91,8 @@ int32_t application_run()
         SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
         ssd1306_initialize_device(&dev);
 
-        uint32_t image_height_bytes = OLED_HEIGHT;
-        uint32_t image_width_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
+        uint32_t image_width_bytes = OLED_HEIGHT;
+        uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
 
         uint32_t buffer_length = (image_height_bytes * image_width_bytes) + 1;
         uint8_t *buffer = (uint8_t*)malloc(buffer_length);
@@ -105,24 +105,30 @@ int32_t application_run()
         LOG_INFO("RAM   %d : buffer %d\n", sizeof(SSD1306::DisplayRamWrite), buffer_length);
 
         Canvas canvas;
-        canvas.height = OLED_HEIGHT;
-        canvas.width  = OLED_WIDTH;
+        canvas.height = OLED_WIDTH;
+        canvas.width  = OLED_HEIGHT;
         canvas.image  = &buffer[1];
         canvas_fill(&canvas, 0x00);
-        canvas.image = buffer;
-        canvas_print(&canvas);
         ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
+        ssd1306_write_buffer(&dev, buffer, buffer_length);
 
         uint32_t dexNumber = 3;
         if(dexNumber >= 1 && dexNumber <= 151) {
             sprite.height = SPRITE_HEIGHT;
             sprite.width = SPRITE_WIDTH;
             sprite.magnify = poke_sprite_magnify;
+            sprite.invert = 1;
             index_to_sprite(dexNumber, &ss, &sprite);
         } else {
             dexNumber = 0;
         } 
         canvas_draw_bmp_sprite(&canvas, &(ss.bitmap), &sprite, offset_x, offset_y);
+        canvas_byte_flip(&canvas);
+        canvas_print(&canvas);
+        ssd1306_reset_cursor(&dev);
+        // uint8_t test_buffer[17] = {0x40, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x00, 
+        //                            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x00};
+        // ssd1306_write_buffer(&dev, test_buffer, 17);
         ssd1306_write_buffer(&dev, buffer, buffer_length);
 
     #endif

@@ -44,4 +44,6 @@ void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start,
 void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
                             uint32_t offset_x, uint32_t offset_y);
 
+void canvas_byte_flip(Canvas *canvas);
+
 #endif // DRAW_CANVAS_H
