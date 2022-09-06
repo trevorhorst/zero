@@ -39,6 +39,19 @@
 #define OLED_WRITE_MODE _u(0xFE)
 #define OLED_READ_MODE _u(0xFF)
 
+typedef struct ssd1306_device {
+    i2c_inst_t *bus;
+    uint8_t address;
+} SSD1306Dev;
+
+void ssd1306_write(SSD1306Dev* dev, uint8_t byte);
+void ssd1306_write_buffer(SSD1306Dev *dev, uint8_t *buffer, int32_t buffer_length);
+void ssd1306_fill_screen(SSD1306Dev *dev, uint8_t byte);
+void ssd1306_initialize_device(SSD1306Dev *dev);
+void ssd1306_ignore_ram(SSD1306Dev *dev, bool enable);
+void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast);
+
+
 class SSD1306
 {
 public:
@@ -59,15 +72,22 @@ public:
         int buflen;
     };
 
+    enum AddressingMode {
+        HORIZONTAL  = 0,
+        VERTICAL
+    };
+
     SSD1306(i2c_inst_t *bus, uint8_t address);
 
     void initialize();
     void ignore_ram(bool enable);
     void render(uint8_t *buffer, RenderArea *area);
     void fill_screen(uint8_t buffer);
-    void fill_display(DisplayRam &ram);
+    void fill_display(DisplayRam &ram, uint8_t byte = 0x00);
     void fill_display_random(DisplayRam &ram);
     void reset_cursor();
+    void set_contrast(uint8_t contrast);
+    void set_addressing_mode(AddressingMode mode);
 
     static void fill(uint8_t buf[], uint8_t fill);
     static void calc_render_area_buflen(struct RenderArea *area);

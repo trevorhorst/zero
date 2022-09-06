@@ -14,6 +14,8 @@ set(SOURCE
     src/command/command_handler.cpp
     src/command/command_help.cpp
     src/control/control.cpp
+    src/draw/bmpspritesheet.cpp
+    src/draw/canvas.cpp
     src/drivers/epaper.cpp
     src/drivers/ssd1306.cpp
     src/drivers/ws2812.cpp
@@ -33,6 +35,8 @@ set(HEADERS
     include/common/command/command_template.h
     include/common/control/control.h
     include/common/control/control_template.h
+    include/common/draw/bmpspritesheet.h
+    include/common/draw/canvas.h
     include/common/drivers/epaper.h
     include/common/drivers/ssd1306.h
     include/common/drivers/ws2812.h
