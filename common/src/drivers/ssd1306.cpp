@@ -17,17 +17,16 @@ void ssd1306_write_buffer(SSD1306Dev *dev, uint8_t *buffer, int32_t buffer_lengt
 
     // TODO find a more memory-efficient way to do this..
     // maybe break the data transfer into pages?
+    uint8_t *temp_buf = (uint8_t*)malloc(buffer_length + 1);
 
-    uint8_t control = 0x40;
-
-    // for(int32_t i = 1; i < buffer_length + 1; i++) {
-    //     temp_buf[i] = buffer[i - 1];
-    // }
+    for (int i = 1; i < buffer_length + 1; i++) {
+        temp_buf[i] = buffer[i - 1];
+    }
     // Co = 0, D/C = 1 => the driver expects data to be written to RAM
-    i2c_write_blocking(dev->bus, (dev->address & OLED_WRITE_MODE), &control, 1, false);
-    i2c_write_raw_blocking(dev->bus, buffer, buffer_length);
+    temp_buf[0] = 0x40;
+    i2c_write_blocking(dev->bus, (dev->address & OLED_WRITE_MODE), temp_buf, buffer_length + 1, false);
 
-    // free(temp_buf);
+    free(temp_buf);
 }
 
 void ssd1306_fill_screen(SSD1306Dev *dev, uint8_t byte)
@@ -121,8 +120,14 @@ void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast)
     ssd1306_write(dev, contrast);
 }
 
+void ssd1306_set_addressing(SSD1306Dev *dev, uint8_t mode)
+{
+    ssd1306_write(dev, OLED_SET_MEM_ADDR);
+    ssd1306_write(dev, mode);
+}
 
-void SSD1306::fill(uint8_t buf[], uint8_t fill) {
+
+void SSD1306::fill(uint8_t *buf, uint8_t fill) {
     // fill entire buffer with the same byte
     for (int i = 0; i < OLED_BUF_LEN; i++) {
         buf[i] = fill;

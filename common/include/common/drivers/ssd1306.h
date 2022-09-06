@@ -39,6 +39,10 @@
 #define OLED_WRITE_MODE _u(0xFE)
 #define OLED_READ_MODE _u(0xFF)
 
+#define SSD1306_ADDRESSING_PAGE         0x2
+#define SSD1306_ADDRESSING_VERTICAL     0x1
+#define SSD1306_ADDRESSING_HORIZONTAL   0x0
+
 typedef struct ssd1306_device {
     i2c_inst_t *bus;
     uint8_t address;
@@ -50,6 +54,7 @@ void ssd1306_fill_screen(SSD1306Dev *dev, uint8_t byte);
 void ssd1306_initialize_device(SSD1306Dev *dev);
 void ssd1306_ignore_ram(SSD1306Dev *dev, bool enable);
 void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast);
+void ssd1306_set_addressing(SSD1306Dev *dev, uint8_t mode);
 
 
 class SSD1306
@@ -89,7 +94,7 @@ public:
     void set_contrast(uint8_t contrast);
     void set_addressing_mode(AddressingMode mode);
 
-    static void fill(uint8_t buf[], uint8_t fill);
+    static void fill(uint8_t *buf, uint8_t fill);
     static void calc_render_area_buflen(struct RenderArea *area);
     void write_data(const uint8_t *buf, int length);
     void write_buffer(const uint8_t buf[], int buflen);
