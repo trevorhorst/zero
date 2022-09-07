@@ -5,11 +5,11 @@ static const uint8_t canvas_reverse_nibble_lut[] = {
     0x1, 0x9, 0x5, 0xD, 0x3, 0xB, 0x7, 0xF
 };
 
-static const bool debug = false;
+static bool debug = false;
 
 void canvas_debug(bool enable)
 {
-    debug = enable
+    debug = enable;
 }
 
 void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
