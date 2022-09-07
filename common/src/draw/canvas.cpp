@@ -71,16 +71,16 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
         y = y_point;  
         break;
     case 90:
-        x = canvas->width - y_point - 1;
-        y = x_point;
+        x = y_point;
+        y = canvas->height - x_point - 1;
         break;
     case 180:
         x = canvas->width - x_point - 1;
         y = canvas->height - y_point - 1;
         break;
     case 270:
-        x = y_point;
-        y = canvas->height - x_point - 1;
+        x = canvas->width - y_point - 1;
+        y = x_point;
         break;
     default:
         return;
@@ -93,7 +93,56 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
         x = canvas->width - x -1;
         break;
     case CANVAS_MIRROR_VERTICAL:
-        x = canvas->height - x -1;
+        y = canvas->height - y -1;
+        break;
+    default:
+        break;
+    }
+
+    uint32_t canvas_x = x / 8;
+    uint32_t canvas_y = y * (canvas->width / 8);
+    if(color == CanvasColor::BLACK) {
+        canvas->image[canvas_x + canvas_y] &= ~(0x80 >> (x % 8));
+    } else {
+        canvas->image[canvas_x + canvas_y] |= (0x80 >> (x % 8));
+    }
+}
+
+void canvas_set_sprite_pixel(Canvas *canvas, BmpSprite *sprite, uint32_t x_point, uint32_t y_point, uint32_t rotate, uint32_t mirror, CanvasColor color)
+{
+    uint32_t x = x_point;
+    uint32_t y = y_point;    
+
+    // Rotates in degress to the right
+    switch(rotate) {
+    case 0:
+        x = x_point;
+        y = y_point;  
+        break;
+    case 90:
+        x = y_point;
+        y = sprite->height - x_point - 1;
+        break;
+    case 180:
+        x = sprite->width - x_point - 1;
+        y = sprite->height - y_point - 1;
+        break;
+    case 270:
+        x = sprite->width - y_point - 1;
+        y = x_point;
+        break;
+    default:
+        return;
+    }
+
+    switch(mirror) {
+    case CANVAS_MIRROR_NONE:
+        break;
+    case CANVAS_MIRROR_HORIZONTAL:
+        x = sprite->width - x - 1;
+        break;
+    case CANVAS_MIRROR_VERTICAL:
+        y = sprite->height - y - 1;
         break;
     default:
         break;
@@ -117,6 +166,19 @@ void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
         for(y_coordinate = 0; y_coordinate < size; y_coordinate++) {
             canvas_set_pixel(canvas, (x_point + x_coordinate), 
                              (y_point + y_coordinate), 0, CANVAS_MIRROR_NONE, color);
+        }
+    }
+}
+
+void canvas_draw_sprite_point(Canvas *canvas, BmpSprite *sprite, uint32_t x_point, uint32_t y_point, 
+                       CanvasColor color, uint8_t size)
+{
+    uint32_t x_coordinate = 0;
+    uint32_t y_coordinate = 0;
+    for(x_coordinate = 0; x_coordinate < size; x_coordinate++) {
+        for(y_coordinate = 0; y_coordinate < size; y_coordinate++) {
+            canvas_set_sprite_pixel(canvas, sprite, (x_point + x_coordinate), 
+                             (y_point + y_coordinate), 90, CANVAS_MIRROR_VERTICAL, color);
         }
     }
 }
@@ -161,10 +223,10 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
                 // printf("%d: canvas_x: %d, canvas_y: %d\n", x, canvas_x_point, canvas_y_point);
                 if(bmp->pixel_data[bmp_x + bmp_y] & (0x80 >> i)) {
                     if(debug){ printf("-"); }
-                    canvas_draw_point(canvas, canvas_x_point, canvas_y_point, white, size);
+                    canvas_draw_sprite_point(canvas, sprite, canvas_x_point, canvas_y_point, white, size);
                 } else {
                     if(debug){ printf("0"); }
-                    canvas_draw_point(canvas, canvas_x_point, canvas_y_point, black, size);
+                    canvas_draw_sprite_point(canvas, sprite, canvas_x_point, canvas_y_point, black, size);
                 }
             }
         }
