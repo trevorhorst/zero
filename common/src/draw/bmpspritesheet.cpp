@@ -153,10 +153,10 @@ void bmpss_print_sheet(BmpSpriteSheet *ss)
 void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite)
 {
     int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
-    for(int32_t h = (sprite->height - 1); h >= 0; h--) {
+    for(int32_t h = 0; h < sprite->height; h++) {
         for(int32_t w = 0; w < ((sprite->width) / 8); w++) {
-            int32_t y = (h + sprite->y) * scanline_width;
-            int32_t x = w + (sprite->x / 8);
+            int32_t x = (sprite->x / 8) + w;
+            int32_t y = (((sprite->height + sprite->y) - 1) - h) * scanline_width;
             bmpss_print_pixel(ss->bitmap.pixel_data[y + x]);
         }
         printf("\n");

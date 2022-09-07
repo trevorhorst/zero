@@ -21,13 +21,24 @@ void ssd1306_write_buffer(SSD1306Dev *dev, uint8_t *buffer, int32_t buffer_lengt
     uint8_t *temp_buf = buffer;
     temp_buf[0] = 0x40;
 
-    // for(int i = 1; i < buffer_length; i++) {
-    //     // temp_buf[i] = buffer[i - 1];
-    //     if((i-1) % 8 == 0) {
-    //         printf("\n");
-    //     }
-    //     printf("%02X ", temp_buf[i]);
-    // }
+    // printf("\n");
+    uint8_t *temp = &buffer[1];
+    for(int i = 0; i < buffer_length - 1; i++) {
+        // temp_buf[i] = buffer[i - 1];
+        if(i % 8 == 0) {
+            printf("\n%02d: ", i / 8);
+        }
+        for(int8_t bit = 0; bit < 8; bit++) {
+            uint8_t shift = 1 << (7 - bit);
+            if(temp[i] & shift) {
+                printf("0");
+            } else {
+                printf(".");
+            }
+        }
+        // printf("%02X ", temp_buf[i]);
+    }
+    printf("\n");
     // Co = 0, D/C = 1 => the driver expects data to be written to RAM
     i2c_write_blocking(dev->bus, (dev->address & OLED_WRITE_MODE), temp_buf, buffer_length, false);
 

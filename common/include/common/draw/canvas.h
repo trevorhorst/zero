@@ -28,6 +28,8 @@ typedef enum {
 #define CANVAS_MIRROR_VERTICAL      1
 #define CANVAS_MIRROR_HORIZONTAL    2
 
+void canvas_debug(bool enable);
+
 void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width);
 void canvas_deinitialize(Canvas *canvas);
 

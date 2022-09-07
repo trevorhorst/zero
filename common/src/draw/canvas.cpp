@@ -5,6 +5,13 @@ static const uint8_t canvas_reverse_nibble_lut[] = {
     0x1, 0x9, 0x5, 0xD, 0x3, 0xB, 0x7, 0xF
 };
 
+static const bool debug = false;
+
+void canvas_debug(bool enable)
+{
+    debug = enable
+}
+
 void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
 {
     // Width needs to be reduced to bytes
@@ -88,6 +95,8 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
     case CANVAS_MIRROR_VERTICAL:
         x = canvas->height - x -1;
         break;
+    default:
+        break;
     }
 
     uint32_t canvas_x = x / 8;
@@ -106,8 +115,8 @@ void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
     uint32_t y_coordinate = 0;
     for(x_coordinate = 0; x_coordinate < size; x_coordinate++) {
         for(y_coordinate = 0; y_coordinate < size; y_coordinate++) {
-            canvas_set_pixel(canvas, (x_point + x_coordinate - 1), 
-                             (y_point + y_coordinate - 1), 90, CANVAS_MIRROR_HORIZONTAL, color);
+            canvas_set_pixel(canvas, (x_point + x_coordinate), 
+                             (y_point + y_coordinate), 0, CANVAS_MIRROR_NONE, color);
         }
     }
 }
@@ -136,13 +145,14 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
     }
 
     for(y = 0; y < sprite->height; y++) {
+        if(debug){ printf("\n%02d: ", y); }
         for(x = 0; x < (sprite->width / 8); x++) {
             // Need to correlate the bitmap with the canvas. Bitmaps are stored 
             // bottom to top
             uint32_t bmp_x = (sprite->x / 8) + x;
             uint32_t bmp_y = (((sprite->height + sprite->y) - 1) - y) * scanline_width;
-            uint32_t canvas_x = x + (offset_x / 8);
-            uint32_t canvas_y = (y + offset_y) * (canvas->width / 8);
+            // uint32_t canvas_x = x + (offset_x / 8);
+            // uint32_t canvas_y = (y + offset_y) * (canvas->width / 8);
 
             // canvas->image[canvas_x + canvas_y] = bmp->pixel_data[bmp_x + bmp_y];
             for(uint32_t i = 0; i < 8; i++) {
@@ -150,8 +160,10 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
                 uint32_t canvas_y_point = offset_y + (y * size);
                 // printf("%d: canvas_x: %d, canvas_y: %d\n", x, canvas_x_point, canvas_y_point);
                 if(bmp->pixel_data[bmp_x + bmp_y] & (0x80 >> i)) {
+                    if(debug){ printf("-"); }
                     canvas_draw_point(canvas, canvas_x_point, canvas_y_point, white, size);
                 } else {
+                    if(debug){ printf("0"); }
                     canvas_draw_point(canvas, canvas_x_point, canvas_y_point, black, size);
                 }
             }
