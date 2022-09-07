@@ -85,30 +85,28 @@ int32_t application_run()
     while(true) {
         // Clear the canvas
         canvas_fill(&canvas, 0x00);
-        // ssd1306_write_buffer(&dev, buffer, buffer_length);
+
         // Reset the cursor to the starting point
         ssd1306_reset_cursor(&dev);
         
-        // Select the pokemon sprite
-        if(dexNumber >= 1 && dexNumber <= 151) {
-            sprite.height = SPRITE_HEIGHT;
-            sprite.width = SPRITE_WIDTH;
-            sprite.magnify = poke_sprite_magnify;
-            sprite.invert = 1;
-            index_to_sprite(dexNumber, &ss, &sprite);
-        } else {
-            dexNumber = 0;
+        if(dexNumber < 1 && dexNumber > 151) {
+            // Reset the dex counter if we go out of bounds
+            dexNumber = 1;
         } 
+
+        // Select the pokemon sprite
+        sprite.height = SPRITE_HEIGHT;
+        sprite.width = SPRITE_WIDTH;
+        sprite.magnify = poke_sprite_magnify;
+        sprite.invert = 1;
+        index_to_sprite(dexNumber, &ss, &sprite);
 
         // Draw the sprite to the canvas and flip bytes
         canvas_draw_bmp_sprite(&canvas, &(ss.bitmap), &sprite, offset_x, offset_y);
         canvas_byte_flip(&canvas);
 
         // Draw to screen
-        uint64_t start = to_us_since_boot(get_absolute_time());
         ssd1306_write_buffer(&dev, buffer, buffer_length);
-        uint64_t end = to_us_since_boot(get_absolute_time());
-        LOG_INFO("Total time to render: %llu\n", end - start);
 
         dexNumber++;
 
