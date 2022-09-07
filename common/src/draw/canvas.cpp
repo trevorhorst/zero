@@ -1,5 +1,10 @@
 #include "common/draw/canvas.h"
 
+static const uint8_t canvas_reverse_nibble_lut[] = {
+    0x0, 0x8, 0x4, 0xC, 0x2, 0xA, 0x6, 0xE, 
+    0x1, 0x9, 0x5, 0xD, 0x3, 0xB, 0x7, 0xF
+};
+
 void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
 {
     // Width needs to be reduced to bytes
@@ -151,12 +156,14 @@ void canvas_byte_flip(Canvas *canvas)
     for(y = 0; y < canvas->height; y++) {
         for(x = 0; x < (canvas->width / 8); x++) {
             uint8_t byte = canvas->image[x + (y * (canvas->width / 8))];
-            canvas->image[x + (y * (canvas->width / 8))] = 0;
-            for(bit = 0; bit < 8; bit++) {
-                if(byte & (0x1 << bit)) {
-                    canvas->image[x + (y * (canvas->width / 8))] |= (0x80 >> bit);
-                }
-            }
+            canvas->image[x + (y * (canvas->width / 8))] = 
+                (canvas_reverse_nibble_lut[byte & 0xF] << 4) |
+                (canvas_reverse_nibble_lut[byte >> 4]);
+            // for(bit = 0; bit < 8; bit++) {
+            //     if(byte & (0x1 << bit)) {
+            //         canvas->image[x + (y * (canvas->width / 8))] |= (0x80 >> bit);
+            //     }
+            // }
         }
     }
 }

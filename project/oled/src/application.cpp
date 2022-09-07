@@ -108,11 +108,20 @@ int32_t application_run()
         canvas.height = OLED_WIDTH;
         canvas.width  = OLED_HEIGHT;
         canvas.image  = &buffer[1];
-        canvas_fill(&canvas, 0x00);
         ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
-        ssd1306_write_buffer(&dev, buffer, buffer_length);
 
-        uint32_t dexNumber = 3;
+        uint32_t dexNumber = 1;
+
+    #endif
+
+    while(true) {
+        // Clear the canvas
+        canvas_fill(&canvas, 0x00);
+        ssd1306_write_buffer(&dev, buffer, buffer_length);
+        // Reset the cursor to the starting point
+        ssd1306_reset_cursor(&dev);
+        
+        // Select the pokemon sprite
         if(dexNumber >= 1 && dexNumber <= 151) {
             sprite.height = SPRITE_HEIGHT;
             sprite.width = SPRITE_WIDTH;
@@ -122,30 +131,17 @@ int32_t application_run()
         } else {
             dexNumber = 0;
         } 
+
+        // Draw the sprite to the canvas and flip bytes
         canvas_draw_bmp_sprite(&canvas, &(ss.bitmap), &sprite, offset_x, offset_y);
         canvas_byte_flip(&canvas);
-        canvas_print(&canvas);
-        ssd1306_reset_cursor(&dev);
-        // uint8_t test_buffer[17] = {0x40, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x00, 
-        //                            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x00};
-        // ssd1306_write_buffer(&dev, test_buffer, 17);
+
+        // Draw to screen
         ssd1306_write_buffer(&dev, buffer, buffer_length);
 
-    #endif
+        dexNumber++;
 
-    uint32_t count = 0;
-    uint32_t multiplier = 1;
-    while(true) {
-        if(count == 25) {
-            multiplier = -1;
-        } else if(count == 1) {
-            multiplier = 1;
-        }
-        // LOG_INFO("Contrast: %d\n", count);
-        // display.set_contrast(count * 10);
-        ssd1306_set_contrast(&dev, count * 10);
-        count = count + multiplier;
-        sleep_ms(50);
+        sleep_ms(1000);
     }
 
     return success;
