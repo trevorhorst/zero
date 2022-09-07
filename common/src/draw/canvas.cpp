@@ -53,7 +53,7 @@ void canvas_print(Canvas *canvas)
     }
 }
 
-void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32_t rotate, CanvasColor color)
+void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32_t rotate, uint32_t mirror, CanvasColor color)
 {
     uint32_t x = x_point;
     uint32_t y = y_point;    
@@ -79,6 +79,17 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
         return;
     }
 
+    switch(mirror) {
+    case CANVAS_MIRROR_NONE:
+        break;
+    case CANVAS_MIRROR_HORIZONTAL:
+        x = canvas->width - x -1;
+        break;
+    case CANVAS_MIRROR_VERTICAL:
+        x = canvas->height - x -1;
+        break;
+    }
+
     uint32_t canvas_x = x / 8;
     uint32_t canvas_y = y * (canvas->width / 8);
     if(color == CanvasColor::BLACK) {
@@ -96,7 +107,7 @@ void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
     for(x_coordinate = 0; x_coordinate < size; x_coordinate++) {
         for(y_coordinate = 0; y_coordinate < size; y_coordinate++) {
             canvas_set_pixel(canvas, (x_point + x_coordinate - 1), 
-                             (y_point + y_coordinate - 1), 270, color);
+                             (y_point + y_coordinate - 1), 90, CANVAS_MIRROR_HORIZONTAL, color);
         }
     }
 }
