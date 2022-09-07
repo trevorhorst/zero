@@ -38,7 +38,7 @@ int32_t application_run()
     sleep_ms(1000);
 
     LOG_INFO("Initializing I2C...\n");
-    i2c_init(i2c1, I2C_BUS_SPEED_KHZ(1000));
+    i2c_init(i2c1, I2C_BUS_SPEED_KHZ(2000));
     gpio_set_function(PIN_I2C1_SDA, GPIO_FUNC_I2C);
     gpio_set_function(PIN_I2C1_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(PIN_I2C1_SDA);
@@ -59,65 +59,33 @@ int32_t application_run()
     uint32_t offset_y = ((OLED_HEIGHT - (SPRITE_WIDTH * poke_sprite_magnify)) / 2);
     
     LOG_INFO("Initializing Display...\n");
-    #ifdef OOP
-    SSD1306 display = SSD1306(i2c1, SSD1306_DISPLAY_ADDR);
-    display.initialize();
+    SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
+    ssd1306_initialize_device(&dev);
+    // Configure vertical addressing so that canvas scheme makes sense with how
+    // it's drawn to the screen
+    ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
 
-    SSD1306::DisplayRamWrite buffer_0;
-    display.fill_display(buffer_0.ram, 0xFF);
+    // Since we are using vertical addressing, swap our height and width parameters
+    uint32_t image_width_bytes = OLED_HEIGHT;
+    uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
 
-    SSD1306::DisplayRamWrite buffer_1;
-    display.fill_display(buffer_1.ram, 0xFC);
+    uint32_t buffer_length = (image_height_bytes * image_width_bytes) + 1;
+    uint8_t *buffer = (uint8_t*)malloc(buffer_length);
 
-    SSD1306::DisplayRamWrite buffer_2;
-    display.fill_display(buffer_2.ram, 0xF0);
+    Canvas canvas;
+    canvas.height = OLED_WIDTH;
+    canvas.width  = OLED_HEIGHT;
+    canvas.image  = &buffer[1];
 
-    SSD1306::DisplayRamWrite buffer_3;
-    display.fill_display(buffer_3.ram, 0xC0);
+    uint32_t dexNumber = 1;
 
-    // LOG_INFO("Ignore display RAM...\n");
-    // ssd1306_ignore_ram(&dev, true);
-    // sleep_ms(500);
-    // LOG_INFO("Acknowledge display RAM...\n");
-    // ssd1306_ignore_ram(&dev, false);
-    // sleep_ms(500);
-
-    LOG_INFO("Display buffer\n");
-    display.set_addressing_mode(SSD1306::AddressingMode::VERTICAL);
-    display.write_buffer(buffer_1);
-    // display.write_buffer((uint8_t*)&(buffer_1.ram), sizeof(SSD1306::DisplayRam));
-    // ssd1306_write_buffer(&dev, canvas.image, buffer_length);
-    #else
-        SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
-        ssd1306_initialize_device(&dev);
-
-        uint32_t image_width_bytes = OLED_HEIGHT;
-        uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
-
-        uint32_t buffer_length = (image_height_bytes * image_width_bytes) + 1;
-        uint8_t *buffer = (uint8_t*)malloc(buffer_length);
-
-        // SSD1306::DisplayRam ram;
-        // SSD1306::fill((uint8_t*)(&ram), 0xFF);
-        // ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
-        // ssd1306_write_buffer(&dev, (uint8_t*)(&ram), sizeof(SSD1306::DisplayRam));
-
-        LOG_INFO("RAM   %d : buffer %d\n", sizeof(SSD1306::DisplayRamWrite), buffer_length);
-
-        Canvas canvas;
-        canvas.height = OLED_WIDTH;
-        canvas.width  = OLED_HEIGHT;
-        canvas.image  = &buffer[1];
-        ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
-
-        uint32_t dexNumber = 1;
-
-    #endif
+    LOG_INFO("   OLED Version: %s\n", OLED_VERSION);
+    LOG_INFO(" Common Version: %s\n", COMMON_VERSION);
 
     while(true) {
         // Clear the canvas
         canvas_fill(&canvas, 0x00);
-        ssd1306_write_buffer(&dev, buffer, buffer_length);
+        // ssd1306_write_buffer(&dev, buffer, buffer_length);
         // Reset the cursor to the starting point
         ssd1306_reset_cursor(&dev);
         
@@ -137,7 +105,10 @@ int32_t application_run()
         canvas_byte_flip(&canvas);
 
         // Draw to screen
+        uint64_t start = to_us_since_boot(get_absolute_time());
         ssd1306_write_buffer(&dev, buffer, buffer_length);
+        uint64_t end = to_us_since_boot(get_absolute_time());
+        LOG_INFO("Total time to render: %llu\n", end - start);
 
         dexNumber++;
 
