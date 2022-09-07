@@ -90,4 +90,6 @@ void bmpss_print_sheet(BmpSpriteSheet *ss);
  */
 void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite);
 
+void bmpss_print_pixel(uint8_t byte);
+
 #endif // BMPSPRITESHEET_H

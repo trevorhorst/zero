@@ -10,6 +10,8 @@ typedef struct {
     uint8_t *image;
     uint32_t height;
     uint32_t width;
+    uint32_t rotate;
+    uint32_t mirror;
 } Canvas;
 
 typedef enum {

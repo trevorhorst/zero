@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     common
     DESCRIPTION "RP2040 Common Library"
-    VERSION 0.3.3
+    VERSION 0.3.4
     LANGUAGES C CXX ASM
 )
 
