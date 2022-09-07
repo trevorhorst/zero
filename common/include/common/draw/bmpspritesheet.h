@@ -52,6 +52,7 @@ typedef struct {
     int32_t y;
     int8_t invert;
     int8_t magnify;
+    int16_t rotate;
 } BmpSprite;
 
 /**

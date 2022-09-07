@@ -213,21 +213,52 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
             // Need to correlate the bitmap with the canvas. Bitmaps are stored 
             // bottom to top
             uint32_t bmp_x = (sprite->x / 8) + x;
-            uint32_t bmp_y = (((sprite->height + sprite->y) - 1) - y) * scanline_width;
-            // uint32_t canvas_x = x + (offset_x / 8);
-            // uint32_t canvas_y = (y + offset_y) * (canvas->width / 8);
+            // Handle from bottom to top
+            uint32_t bmp_y = (sprite->y + y) * scanline_width;
+            // // Handle from top to bottom
+            // uint32_t bmp_y = (((sprite->height + sprite->y) - 1) - y) * scanline_width;
 
             // canvas->image[canvas_x + canvas_y] = bmp->pixel_data[bmp_x + bmp_y];
             for(uint32_t i = 0; i < 8; i++) {
-                uint32_t canvas_x_point = ((x * 8 * size) + offset_x) + (i * size);
-                uint32_t canvas_y_point = offset_y + (y * size);
-                // printf("%d: canvas_x: %d, canvas_y: %d\n", x, canvas_x_point, canvas_y_point);
+                
+                // Calculate the point on the canvas
+                uint32_t canvas_x_point = ((x * 8 * size)) + (i * size);
+                uint32_t canvas_y_point = (y * size);
+
+                // If we are rotating the sprite, calculate the rotation
+                uint32_t x_point = 0;
+                uint32_t y_point = 0;
+                switch(sprite->rotate) {
+                case(CANVAS_ROTATE_270):
+                    x_point = (sprite->width - canvas_y_point) - 1;
+                    y_point = canvas_x_point;
+                    break;
+                case(CANVAS_ROTATE_180):
+                    x_point = (sprite->width - canvas_x_point) - 1;
+                    y_point = (sprite->height - canvas_y_point) - 1;
+                    break;
+                case(CANVAS_ROTATE_90):
+                    x_point = canvas_y_point;
+                    y_point = (sprite->height - canvas_x_point) - 1;
+                    break;
+                default:
+                    x_point = canvas_x_point;
+                    y_point = canvas_y_point;
+                    break;
+                }
+
+                // Add the offset into the calculated points
+                x_point += offset_x;
+                y_point += offset_y;
+
+                // printf("%d: canvas_x: %d, canvas_y: %d\n", x, x_point, y_point);
+                // Draw the bitmap pixel to the canvas
                 if(bmp->pixel_data[bmp_x + bmp_y] & (0x01 << (7 - i))) {
                     if(debug){ printf("-"); }
-                    canvas_draw_point(canvas, canvas_x_point, canvas_y_point, white, size);
+                    canvas_draw_point(canvas, x_point, y_point, white, size);
                 } else {
                     if(debug){ printf("0"); }
-                    canvas_draw_point(canvas, canvas_x_point, canvas_y_point, black, size);
+                    canvas_draw_point(canvas, x_point, y_point, black, size);
                 }
             }
         }

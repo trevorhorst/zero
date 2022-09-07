@@ -30,6 +30,11 @@ typedef enum {
 #define CANVAS_MIRROR_VERTICAL      1
 #define CANVAS_MIRROR_HORIZONTAL    2
 
+#define CANVAS_ROTATE_0     0
+#define CANVAS_ROTATE_90    90
+#define CANVAS_ROTATE_180   180
+#define CANVAS_ROTATE_270   270
+
 void canvas_debug(bool enable);
 
 void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width);
