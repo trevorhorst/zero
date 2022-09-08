@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     oled
     DESCRIPTION "OLED Project Library"
-    VERSION 0.1.1
+    VERSION 0.2.0
     LANGUAGES C CXX ASM
 )
 
@@ -11,6 +11,8 @@ set( SOURCE
         src/application.cpp
         src/resources.cpp
         src/resources/red_blue.bmp.s
+        src/resources/red_blue_grayscale.bmp.s
+        src/resources/red_blue_font.bmp.s
         )
 set( HEADERS
     ${HEADERS}
