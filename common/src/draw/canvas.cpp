@@ -173,16 +173,16 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
                 uint32_t y_point = 0;
                 switch(sprite->rotate) {
                 case(CANVAS_ROTATE_270):
-                    x_point = (sprite->width * size - canvas_y_point) - 1;
+                    x_point = (sprite->width * size - canvas_y_point) - size;
                     y_point = canvas_x_point;
                     break;
                 case(CANVAS_ROTATE_180):
-                    x_point = (sprite->width * size - canvas_x_point) - 1;
-                    y_point = (sprite->height * size - canvas_y_point) - 1;
+                    x_point = (sprite->width * size - canvas_x_point) - size;
+                    y_point = (sprite->height * size - canvas_y_point) - size;
                     break;
                 case(CANVAS_ROTATE_90):
                     x_point = canvas_y_point;
-                    y_point = (sprite->height * size - canvas_x_point) - 1;
+                    y_point = (sprite->height * size - canvas_x_point) - size;
                     break;
                 default:
                     x_point = canvas_x_point;
