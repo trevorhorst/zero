@@ -42,7 +42,7 @@ void bmpss_print_pixel(uint8_t byte)
         if(byte & shift) {
             printf("0");
         } else {
-            printf(" ");
+            printf("-");
         }
     }
 }
@@ -161,4 +161,45 @@ void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite)
         }
         printf("\n");
     }
+}
+
+void bmpss_print_grayscale_pixel(uint8_t byte)
+{
+    uint8_t high = byte >> 4;
+    if(high == 0x3) {
+        printf(BMPSS_PRINT_WHITE);
+    } else if(high == 0x2) {
+        printf(BMPSS_PRINT_GRAY);
+    } else if(high == 0x1) {
+        printf(BMPSS_PRINT_DARK_GRAY);
+    } else if(high == 0x0) {
+        printf(BMPSS_PRINT_BLACK);
+    }
+
+    uint8_t low  = byte & 0xF;
+    if(low == 0x3) {
+        printf(BMPSS_PRINT_WHITE);
+    } else if(low == 0x2) {
+        printf(BMPSS_PRINT_GRAY);
+    } else if(low == 0x1) {
+        printf(BMPSS_PRINT_DARK_GRAY);
+    } else if(low == 0x0) {
+        printf(BMPSS_PRINT_BLACK);
+    }
+}
+
+void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, BmpSprite *sprite)
+{
+    int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
+    for(int32_t h = sprite->height - 1; h >= 0; h--) {
+    //for(int32_t h = 0; h < sprite->height; h++) {
+        printf("%02d: ", h); 
+        for(int32_t w = 0; w < ((sprite->width) / 2); w++) {
+            // int32_t y = ((sprite->height - h - 1) + sprite->y) * scanline_width;
+            int32_t y = ((h) + sprite->y) * scanline_width;
+            int32_t x = w + (sprite->x / 2); 
+            bmpss_print_grayscale_pixel(ss->bitmap.pixel_data[y + x]);
+        }
+        printf("\n");
+    }   
 }
