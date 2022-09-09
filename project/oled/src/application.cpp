@@ -44,6 +44,7 @@ int32_t application_run()
     gpio_pull_up(PIN_I2C1_SDA);
     gpio_pull_up(PIN_I2C1_SCL);
 
+    // Initialize our sprite sheets
     BmpSpriteSheet ss;
     bmpss_initialize(&ss, red_blue_bmp, red_blue_bmp_size);
 
@@ -53,17 +54,13 @@ int32_t application_run()
     BmpSpriteSheet ss_font;
     bmpss_initialize(&ss_font, red_blue_font_bmp, red_blue_font_bmp_size);
 
+    // Initialize our sprites
     BmpSprite sprite;
     sprite.height = SPRITE_HEIGHT;
     sprite.width = SPRITE_WIDTH;
     sprite.invert = 0;
     sprite.magnify = 1;
     sprite.rotate = CANVAS_ROTATE_270;
-
-    index_to_sprite(123, &ss_grayscale, &sprite);
-
-
-    // bmpss_print_grayscale_sprite(&ss_grayscale, &sprite);
 
     BmpSprite font_sprite;
     font_sprite.height = 8;
@@ -74,10 +71,6 @@ int32_t application_run()
     font_sprite.rotate = CANVAS_ROTATE_270;
     font_sprite.magnify = 1;
 
-    uint32_t poke_sprite_magnify = 1;
-    uint32_t offset_y = ((OLED_WIDTH - (SPRITE_WIDTH * poke_sprite_magnify)) / 2);
-    uint32_t offset_x = ((OLED_HEIGHT - (SPRITE_WIDTH * poke_sprite_magnify)) / 2);
-    
     LOG_INFO("Initializing Display...\n");
     SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
     ssd1306_initialize_device(&dev);
@@ -95,8 +88,6 @@ int32_t application_run()
     uint8_t *gs_buffer[3] = {NULL, NULL, NULL};
     Canvas framebuffer[3];
 
-    LOG_INFO("Testing grayscale BMP sprite...\n");
-    bmpss_print_grayscale_sprite(&ss_grayscale, &sprite);
     for(uint32_t i = 0; i < 3; i++) {
         gs_buffer[i] = (uint8_t*)malloc(gs_buffer_length);
         framebuffer[i].mirror = CANVAS_MIRROR_NONE;
@@ -108,35 +99,22 @@ int32_t application_run()
         // canvas_draw_grayscale_bmp_sprite(&framebuffer[i], &(ss_grayscale.bitmap), &sprite, i, offset_x, offset_y);
     }
 
-    uint32_t buffer_length = (image_height_bytes * image_width_bytes) + 1;
-    uint8_t *buffer = (uint8_t*)malloc(buffer_length);
-
-    Canvas canvas;
-    // Screen is drawn from right to left so mirror it horizontally
-    canvas.mirror = CANVAS_MIRROR_NONE;
-    canvas.rotate = 0;
-    canvas.height = OLED_WIDTH;
-    canvas.width  = OLED_HEIGHT;
-    canvas.image  = &buffer[1];
-    // Clear the canvas
-    canvas_fill(&canvas, 0xFF);
-
-    ssd1306_write_buffer(&dev, buffer, buffer_length);
+    // Reset the cursor and clear the screen so we start with a blank slate
     ssd1306_reset_cursor(&dev);
+    ssd1306_fill_screen(&dev, 0x00);
 
+    // Print version info to screen, 
     LOG_INFO("   OLED Version: %s\n", OLED_VERSION);
     LOG_INFO(" Common Version: %s\n", COMMON_VERSION);
 
+    // Calculate the ecenter of the screen, to draw the image
+    uint32_t offset_y = ((OLED_WIDTH - (SPRITE_WIDTH * sprite.magnify)) / 2);
+    uint32_t offset_x = ((OLED_HEIGHT - (SPRITE_WIDTH * sprite.magnify)) / 2);
+    
     uint32_t dexNumber = 1;
     uint32_t framestart = 0;
     uint32_t frameend = 0;
     do {
-
-
-        // uint64_t start = to_us_since_boot(get_absolute_time());
-        // // Reset the cursor to the starting point
-        // ssd1306_reset_cursor(&dev);
-        
         if((dexNumber < 1) || (dexNumber > 151)) {
             // Reset the dex counter if we go out of bounds
             dexNumber = 1;
@@ -146,8 +124,9 @@ int32_t application_run()
         index_to_sprite(dexNumber, &ss, &sprite);
         // index_to_sprite(1, &ss_font, &font_sprite);
 
-        for(uint32_t i = 0; i < 3; i++) {
-            canvas_draw_grayscale_bmp_sprite(&framebuffer[i], &(ss_grayscale.bitmap), &sprite, i, offset_x, offset_y);
+        for(uint32_t layer = 0; layer < 3; layer++) {
+            canvas_draw_grayscale_bmp_sprite(&framebuffer[layer], &(ss_grayscale.bitmap),
+                                             &sprite, layer, offset_x, offset_y);
         }
 
         framestart = to_ms_since_boot(get_absolute_time());
@@ -162,20 +141,17 @@ int32_t application_run()
             frameend = to_ms_since_boot(get_absolute_time());
         }
 
-        // // Draw the sprite to the canvas and flip bytes
-        // canvas_draw_bmp_sprite(&canvas, &(ss.bitmap), &sprite, offset_x, offset_y);
-        // // canvas_draw_bmp_sprite(&canvas, &(ss_font.bitmap), &font_sprite, offset_x, offset_y);
-
-        // // Draw to screen
-        // ssd1306_write_buffer(&dev, buffer, buffer_length);
-        // uint64_t end = to_us_since_boot(get_absolute_time());
-        // LOG_INFO("Render time: %llu\n", end - start);
-
         dexNumber++;
 
     } while(true);
 
-    free(buffer);
+    // Cleanup
+    // free(buffer);
+
+    for(uint i = 0; i < 3; i++) {
+        free(gs_buffer[i]);
+        gs_buffer[i] = NULL;
+    }
 
     return success;
 }
