@@ -114,6 +114,7 @@ int32_t application_run()
     uint32_t dexNumber = 1;
     uint32_t framestart = 0;
     uint32_t frameend = 0;
+    uint32_t frames = 0;
     do {
         if((dexNumber < 1) || (dexNumber > 151)) {
             // Reset the dex counter if we go out of bounds
@@ -129,20 +130,23 @@ int32_t application_run()
                                              &sprite, layer, offset_x, offset_y);
         }
 
+        ssd1306_reset_cursor(&dev);
+        frames = 0;
         framestart = to_ms_since_boot(get_absolute_time());
         frameend = framestart;
         while((frameend - framestart) < 1000) {
             for(uint32_t i = 0; i < 3; i++) {
                 // We shouldn't have to reset the cursor if the entire screen is
                 // being written, the display will automaatically wraparound
-                // ssd1306_reset_cursor(&dev);
                 ssd1306_write_buffer(&dev, gs_buffer[i], gs_buffer_length);
             }
+            frames += 1;
             frameend = to_ms_since_boot(get_absolute_time());
         }
 
         dexNumber++;
 
+        printf("FPS: %d\n", frames);
     } while(true);
 
     // Cleanup
