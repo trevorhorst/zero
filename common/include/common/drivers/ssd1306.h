@@ -7,6 +7,8 @@
 
 #include "pico/mutex.h"
 #include "hardware/i2c.h"
+#include "hardware/spi.h"
+#include "hardware/gpio.h"
 
 // commands (see datasheet)
 #define OLED_SET_CONTRAST _u(0x81)
@@ -48,6 +50,20 @@ typedef struct ssd1306_device {
     uint8_t address;
 } SSD1306Dev;
 
+typedef struct ssd1306_spi_device_t {
+    spi_inst_t *bus;
+    // uint32_t sclk;
+    // uint32_t mosi;
+    uint32_t cs;
+    uint32_t dc;
+    uint32_t reset;
+} ssd1306_spi_device;
+
+enum ssd1306_write_type {
+    COMMAND = 0,
+    DATA    = 1
+};
+
 void ssd1306_write(SSD1306Dev* dev, uint8_t byte);
 void ssd1306_write_buffer(SSD1306Dev *dev, uint8_t *buffer, int32_t buffer_length);
 void ssd1306_fill_screen(SSD1306Dev *dev, uint8_t byte);
@@ -56,6 +72,14 @@ void ssd1306_ignore_ram(SSD1306Dev *dev, bool enable);
 void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast);
 void ssd1306_set_addressing(SSD1306Dev *dev, uint8_t mode);
 void ssd1306_reset_cursor(SSD1306Dev *dev);
+
+void ssd1306_write(ssd1306_spi_device *device, ssd1306_write_type type, const uint8_t *buffer,
+                   uint32_t buffer_length);
+void ssd1306_initialize_device(ssd1306_spi_device *dev);
+void ssd1306_ignore_ram(ssd1306_spi_device *device, bool enable);
+void ssd1306_set_addressing(ssd1306_spi_device *device, uint8_t mode);
+void ssd1306_reset_cursor(ssd1306_spi_device *device);
+void ssd1306_display(ssd1306_spi_device *device, const uint8_t *buffer, uint32_t buffer_length);
 
 class SSD1306
 {

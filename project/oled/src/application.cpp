@@ -6,10 +6,19 @@
 #include "project/application.h"
 #include "project/resources.h"
 
+// I2C Pins
 #define PIN_I2C1_SDA    26
 #define PIN_I2C1_SCL    27
 
-#define I2C_BUS_SPEED_KHZ(x) x * 1000
+// SPI Pins
+#define PIN_SPI_MOSI    3
+#define PIN_SPI_SCK     2
+#define PIN_DISPLAY_RES 26
+#define PIN_DISPLAY_DC  27
+#define PIN_DISPLAY_CS  28
+
+#define BUS_SPEED_KHZ(x) x * 1000
+#define BUS_SPEED_KHZ(x) x * 1000
 
 #define SSD1306_DISPLAY_ADDR    0x3D
 
@@ -29,6 +38,35 @@ void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, BmpSprite *sprite)
     // printf("sprite %d: (%d, %d)\n", index, sprite->x, sprite->y);
 }
 
+void initialize_i2c()
+{
+    LOG_INFO("Initializing I2C...\n");
+    i2c_init(i2c1, BUS_SPEED_KHZ(1000));
+    gpio_set_function(PIN_I2C1_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(PIN_I2C1_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(PIN_I2C1_SDA);
+    gpio_pull_up(PIN_I2C1_SCL);
+}
+
+void initialize_spi(spi_inst_t *bus)
+{
+    LOG_INFO("Initialize SPI...\n");
+    
+    // Configure clk and data pins
+    gpio_set_function(PIN_SPI_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SPI_MOSI, GPIO_FUNC_SPI);
+
+    // Initialize the SPI port to 
+    spi_init(bus, BUS_SPEED_KHZ(10000));
+    spi_set_format(
+        bus,
+        8,
+        SPI_CPOL_1,
+        SPI_CPHA_1,
+        SPI_MSB_FIRST
+    );
+}
+
 int32_t application_run()
 {
     int32_t success = 0;
@@ -37,12 +75,39 @@ int32_t application_run()
 
     sleep_ms(1000);
 
-    LOG_INFO("Initializing I2C...\n");
-    i2c_init(i2c1, I2C_BUS_SPEED_KHZ(1000));
-    gpio_set_function(PIN_I2C1_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(PIN_I2C1_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(PIN_I2C1_SDA);
-    gpio_pull_up(PIN_I2C1_SCL);
+    LOG_INFO("Initialize GPIO...\n");
+    // Initialize DC pin
+    gpio_init(PIN_DISPLAY_DC);
+    gpio_set_dir(PIN_DISPLAY_DC, GPIO_OUT);
+    gpio_put(PIN_DISPLAY_DC, 0);
+
+    // Initialize chip select pin
+    gpio_init(PIN_DISPLAY_CS);
+    gpio_set_dir(PIN_DISPLAY_CS, GPIO_OUT);
+    gpio_put(PIN_DISPLAY_CS, 0);
+
+    // Initialize reset pin
+    gpio_init(PIN_DISPLAY_RES);
+    gpio_set_dir(PIN_DISPLAY_RES, GPIO_OUT);
+    gpio_put(PIN_DISPLAY_RES, 1);
+
+    // Initialize I2C
+    // initialize_i2c();
+
+    // Initialize SPI
+    initialize_spi(spi0);
+
+    ssd1306_spi_device display;
+    display.bus   = spi0;
+    display.cs    = PIN_DISPLAY_CS;
+    display.dc    = PIN_DISPLAY_DC;
+    display.reset = PIN_DISPLAY_RES;
+
+    LOG_INFO("Initializing Display...\n");
+    ssd1306_initialize_device(&display);
+    // ssd1306_ignore_ram(&display, true);
+    // sleep_ms(500);
+    // ssd1306_ignore_ram(&display, false);
 
     // Initialize our sprite sheets
     BmpSpriteSheet ss;
@@ -71,7 +136,26 @@ int32_t application_run()
     font_sprite.rotate = CANVAS_ROTATE_270;
     font_sprite.magnify = 1;
 
-    LOG_INFO("Initializing Display...\n");
+    // Since we are using vertical addressing, swap our height and width parameters
+    uint32_t image_width_bytes  = OLED_HEIGHT;
+    uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
+
+    Canvas canvas;
+    uint32_t buffer_length = (image_height_bytes * image_width_bytes);
+    uint8_t *buffer = (uint8_t*)malloc(buffer_length);
+    canvas.mirror = CANVAS_MIRROR_NONE;
+    canvas.rotate = CANVAS_ROTATE_0;
+    canvas.height = OLED_WIDTH;
+    canvas.width  = OLED_HEIGHT;
+    canvas.image = buffer;
+    canvas_fill(&canvas, 0x0F);
+    ssd1306_reset_cursor(&display);
+    ssd1306_display(&display, canvas.image, buffer_length);
+    ssd1306_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
+
+    return 0;
+
+
     SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
     ssd1306_initialize_device(&dev);
     // Lower contrast to save power
@@ -80,9 +164,6 @@ int32_t application_run()
     // it's drawn to the screen
     ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
 
-    // Since we are using vertical addressing, swap our height and width parameters
-    uint32_t image_width_bytes  = OLED_HEIGHT;
-    uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
 
     uint32_t gs_buffer_length = (image_height_bytes * image_width_bytes) + 1;
     uint8_t *gs_buffer[3] = {NULL, NULL, NULL};

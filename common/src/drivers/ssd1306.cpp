@@ -141,6 +141,197 @@ void ssd1306_reset_cursor(SSD1306Dev *dev)
 }
 
 
+void ssd1306_write(ssd1306_spi_device *device, ssd1306_write_type type, const uint8_t *buffer,
+                   uint32_t buffer_length)
+{
+    gpio_set_dir(device->cs, GPIO_OUT);
+    gpio_set_dir(device->dc, GPIO_OUT);
+
+    gpio_put(device->cs, 0);
+    switch(type) {
+    case ssd1306_write_type::COMMAND:
+        gpio_put(device->dc, 0);
+        break;
+    case ssd1306_write_type::DATA:
+        gpio_put(device->dc, 1);
+        break;
+    default:
+        break;
+    }
+
+    spi_write_blocking(device->bus, buffer, buffer_length);
+    gpio_put(device->cs, 1);
+}
+
+void ssd1306_display(ssd1306_spi_device *device, const uint8_t *buffer, uint32_t buffer_length)
+{
+    gpio_set_dir(device->cs, GPIO_OUT);
+    gpio_set_dir(device->dc, GPIO_OUT);
+
+    gpio_put(device->cs, 0);
+    gpio_put(device->dc, 1);
+
+    spi_write_blocking(device->bus, buffer, buffer_length);
+    gpio_put(device->cs, 1);
+}
+
+void ssd1306_reset_device(ssd1306_spi_device *device)
+{
+    gpio_set_dir(device->reset, GPIO_OUT);
+    gpio_put(device->reset, 1);
+    sleep_ms(1);
+    gpio_put(device->reset, 0);
+    sleep_ms(10);
+    gpio_put(device->reset, 1);
+}
+
+void ssd1306_initialize_device(ssd1306_spi_device *dev)
+{
+    // some of these commands are not strictly necessary as the reset
+    // process defaults to some of these but they are shown here
+    // to demonstrate what the initialization sequence looks like
+
+    // some configuration values are recommended by the board manufacturer
+
+    ssd1306_reset_device(dev);
+
+    uint8_t init1[] = {OLED_SET_DISP | 0x00};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init1, sizeof(init1)); // set display off
+
+    /* timing and driving scheme */
+    uint8_t init2[] = {OLED_SET_DISP_CLK_DIV, 0x80}; // Set display clock divide ratio, div ratio of 1, standard freq
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init2, sizeof(init2)); // div ratio of 1, standard freq
+
+    uint8_t init3[] = {OLED_SET_MUX_RATIO, (OLED_HEIGHT - 1)}; // Set multiplex ratio, display is only 32 pixels high
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init3, sizeof(init3)); // our display is only 32 pixels high
+
+    // Set display offset, no offset
+    uint8_t init4[] = {OLED_SET_DISP_OFFSET, 0x00};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init4, sizeof(init4));
+
+    /* resolution and layout */
+    // Set display start line to 0
+    uint8_t init5[] = {OLED_SET_DISP_START_LINE};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init5, sizeof(init5)); // set display start line to 0
+
+    // Set charge pump, vcc internally generated
+    uint8_t init6[] = {OLED_SET_CHARGE_PUMP, 0x14};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init6, sizeof(init6));
+
+    /* memory mapping */
+    // Set memory address mode, horizontal addressing
+    uint8_t init7[] = {OLED_SET_MEM_ADDR, 0x00};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init7, sizeof(init7));
+
+    uint8_t init8[] = {(OLED_SET_SEG_REMAP | 0x1)};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init8, sizeof(init8)); // set segment re-map
+    // column address 127 is mapped to SEG0
+
+    uint8_t init9[] = {(OLED_SET_COM_OUT_DIR | 0x8)};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init9, sizeof(init9)); // set COM (common) output scan direction
+    // scan from bottom up, COM[N-1] to COM0
+
+    uint8_t init10[] = {OLED_SET_COM_PIN_CFG, 0x12}; // Set COM (common) pins hardware config, manufacturer magic number
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init10, sizeof(init10));
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_COM_PIN_CFG, 1); // set COM (common) pins hardware configuration
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0x12, 1); // manufacturer magic number
+
+    /* display */
+    uint8_t init11[] = {OLED_SET_CONTRAST, 0xCF};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init11, sizeof(init11));
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_CONTRAST, 1); // set contrast control
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0xCF, 1);
+
+    uint8_t init12[] = {OLED_SET_PRECHARGE, 0xF1};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init12, sizeof(init12));
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_PRECHARGE, 1); // set pre-charge period
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0xF1, 1); // Vcc internally generated on our board
+
+    uint8_t init13[] = {OLED_SET_VCOM_DESEL, 0x40};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init13, sizeof(init13));
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_VCOM_DESEL, 1); // set VCOMH deselect level
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0x40, 1); // 0.83xVcc
+
+    uint8_t init14[] = {OLED_SET_ENTIRE_ON};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init14, sizeof(init14));
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_ENTIRE_ON, 1); // set entire display on to follow RAM content
+
+    uint8_t init15[] = {OLED_SET_NORM_INV};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init15, sizeof(init15));
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_NORM_INV, 1); // set normal (not inverted) display
+
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, OLED_SET_SCROLL | 0x00, 1); // deactivate horizontal scrolling if set
+    // this is necessary as memory writes will corrupt if scrolling was enabled
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0x00, 1);
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0x10, 1);
+    // ssd1306_write(dev, ssd1306_write_type::COMMAND, 0x40, 1);
+
+    uint8_t init16[] = {(OLED_SET_DISP | 0x01)};
+    ssd1306_write(dev, ssd1306_write_type::COMMAND, init16, sizeof(init16)); // turn display on
+
+}
+
+void ssd1306_ignore_ram(ssd1306_spi_device *device, bool enable)
+{
+    uint8_t command = 0;
+    if(enable) {
+        // Ignore RAM, all pixels on
+        command = 0xA5;
+    } else {
+        // Follow RAM
+        command = 0x7F;
+    }
+    ssd1306_write(device, ssd1306_write_type::COMMAND, &command, 1);
+}
+
+void ssd1306_reset_cursor(ssd1306_spi_device *device)
+{
+    // Indicates start column and end column
+    uint8_t init_col[] = {OLED_SET_COL_ADDR, 0x00, 0x7F};
+    ssd1306_write(device, ssd1306_write_type::COMMAND, init_col, sizeof(init_col));
+
+    // Indicates start page and end page
+    uint8_t init_page[] = {OLED_SET_PAGE_ADDR, 0x00, 0x07};
+    ssd1306_write(device, ssd1306_write_type::COMMAND, init_page, sizeof(init_page));
+}
+
+void ssd1306_fill_screen(ssd1306_spi_device *device, uint8_t byte)
+{
+    uint8_t buffer[OLED_NUM_PAGES][128];
+}
+
+void ssd1306_set_addressing(ssd1306_spi_device *device, uint8_t mode)
+{
+    uint8_t init_addressing[2] = {OLED_SET_MEM_ADDR, mode};
+    ssd1306_write(device, ssd1306_write_type::COMMAND, init_addressing, sizeof(init_addressing));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void SSD1306::fill(uint8_t *buf, uint8_t fill) {
     // fill entire buffer with the same byte
     for (int i = 0; i < OLED_BUF_LEN; i++) {
