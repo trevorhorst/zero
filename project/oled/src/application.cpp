@@ -57,7 +57,7 @@ void initialize_spi(spi_inst_t *bus)
     gpio_set_function(PIN_SPI_MOSI, GPIO_FUNC_SPI);
 
     // Initialize the SPI port to 
-    spi_init(bus, BUS_SPEED_KHZ(10000));
+    spi_init(bus, BUS_SPEED_KHZ(750));
     spi_set_format(
         bus,
         8,
@@ -140,32 +140,32 @@ int32_t application_run()
     uint32_t image_width_bytes  = OLED_HEIGHT;
     uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
 
-    Canvas canvas;
-    uint32_t buffer_length = (image_height_bytes * image_width_bytes);
-    uint8_t *buffer = (uint8_t*)malloc(buffer_length);
-    canvas.mirror = CANVAS_MIRROR_NONE;
-    canvas.rotate = CANVAS_ROTATE_0;
-    canvas.height = OLED_WIDTH;
-    canvas.width  = OLED_HEIGHT;
-    canvas.image = buffer;
-    canvas_fill(&canvas, 0x0F);
+    // Canvas canvas;
+    // uint32_t buffer_length = (image_height_bytes * image_width_bytes);
+    // uint8_t *buffer = (uint8_t*)malloc(buffer_length);
+    // canvas.mirror = CANVAS_MIRROR_NONE;
+    // canvas.rotate = CANVAS_ROTATE_0;
+    // canvas.height = OLED_WIDTH;
+    // canvas.width  = OLED_HEIGHT;
+    // canvas.image = buffer;
+    // canvas_fill(&canvas, 0x0F);
     ssd1306_reset_cursor(&display);
-    ssd1306_display(&display, canvas.image, buffer_length);
+    // ssd1306_display(&display, canvas.image, buffer_length);
     ssd1306_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
 
-    return 0;
+    // return 0;
 
 
-    SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
-    ssd1306_initialize_device(&dev);
-    // Lower contrast to save power
-    ssd1306_set_contrast(&dev, 0x01);
-    // Configure vertical addressing so that canvas scheme makes sense with how
-    // it's drawn to the screen
-    ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
+    // SSD1306Dev dev = {i2c1, SSD1306_DISPLAY_ADDR};
+    // ssd1306_initialize_device(&dev);
+    // // Lower contrast to save power
+    // ssd1306_set_contrast(&dev, 0x01);
+    // // Configure vertical addressing so that canvas scheme makes sense with how
+    // // it's drawn to the screen
+    // ssd1306_set_addressing(&dev, SSD1306_ADDRESSING_VERTICAL);
 
 
-    uint32_t gs_buffer_length = (image_height_bytes * image_width_bytes) + 1;
+    uint32_t gs_buffer_length = (image_height_bytes * image_width_bytes);
     uint8_t *gs_buffer[3] = {NULL, NULL, NULL};
     Canvas framebuffer[3];
 
@@ -175,14 +175,14 @@ int32_t application_run()
         framebuffer[i].rotate = CANVAS_ROTATE_0;
         framebuffer[i].height = OLED_WIDTH;
         framebuffer[i].width  = OLED_HEIGHT;
-        framebuffer[i].image = &gs_buffer[i][1];
+        framebuffer[i].image = gs_buffer[i];
         canvas_fill(&framebuffer[i], 0x00);
         // canvas_draw_grayscale_bmp_sprite(&framebuffer[i], &(ss_grayscale.bitmap), &sprite, i, offset_x, offset_y);
     }
 
     // Reset the cursor and clear the screen so we start with a blank slate
-    ssd1306_reset_cursor(&dev);
-    ssd1306_fill_screen(&dev, 0x00);
+    ssd1306_reset_cursor(&display);
+    // ssd1306_fill_screen(&dev, 0x00);
 
     // Print version info to screen, 
     LOG_INFO("   OLED Version: %s\n", OLED_VERSION);
@@ -211,7 +211,7 @@ int32_t application_run()
                                              &sprite, layer, offset_x, offset_y);
         }
 
-        ssd1306_reset_cursor(&dev);
+        // ssd1306_reset_cursor(&display);
         frames = 0;
         framestart = to_ms_since_boot(get_absolute_time());
         frameend = framestart;
@@ -219,7 +219,7 @@ int32_t application_run()
             for(uint32_t i = 0; i < 3; i++) {
                 // We shouldn't have to reset the cursor if the entire screen is
                 // being written, the display will automaatically wraparound
-                ssd1306_write_buffer(&dev, gs_buffer[i], gs_buffer_length);
+                ssd1306_display(&display, gs_buffer[i], gs_buffer_length);
             }
             frames += 1;
             frameend = to_ms_since_boot(get_absolute_time());
