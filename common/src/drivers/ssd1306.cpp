@@ -165,14 +165,7 @@ void ssd1306_write(ssd1306_spi_device *device, ssd1306_write_type type, const ui
 
 void ssd1306_display(ssd1306_spi_device *device, const uint8_t *buffer, uint32_t buffer_length)
 {
-    gpio_set_dir(device->cs, GPIO_OUT);
-    gpio_set_dir(device->dc, GPIO_OUT);
-
-    gpio_put(device->cs, 0);
-    gpio_put(device->dc, 1);
-
-    spi_write_blocking(device->bus, buffer, buffer_length);
-    gpio_put(device->cs, 1);
+    ssd1306_write(device, ssd1306_write_type::DATA, buffer, buffer_length);
 }
 
 void ssd1306_reset_device(ssd1306_spi_device *device)

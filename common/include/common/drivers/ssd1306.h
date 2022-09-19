@@ -73,16 +73,94 @@ void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast);
 void ssd1306_set_addressing(SSD1306Dev *dev, uint8_t mode);
 void ssd1306_reset_cursor(SSD1306Dev *dev);
 
-void ssd1306_write(ssd1306_spi_device *device, ssd1306_write_type type, const uint8_t *buffer,
-                   uint32_t buffer_length);
+/**
+ * @brief Performs a write to the SSD1306
+ * 
+ * @param device Desired device to write to
+ * @param type Type of write operation being performed
+ * @param buffer Buffer of uint8_t bytes to write
+ * @param buffer_length Length of the buffer in bytes
+ */
+void ssd1306_write(ssd1306_spi_device *device, ssd1306_write_type type, const uint8_t *buffer, uint32_t buffer_length);
+
+/**
+ * @brief Initialize the SSD1306 
+ * 
+ * @param dev Desired device to initialize
+ */
 void ssd1306_initialize_device(ssd1306_spi_device *dev);
+
+/**
+ * @brief Enables/Disables the SSD1306 display
+ * 
+ * @param dev Desired target device
+ * @param enable Desired state of the display enable
+ */
 void ssd1306_set_display_enable(ssd1306_spi_device *dev, bool enable);
+
+/**
+ * @brief Set the contrast for the SSD1306 display
+ * 
+ * @param dev Desired target device
+ * @param contrast Desired contrast value, range from 0 - 255 
+ */
 void ssd1306_set_contrast(ssd1306_spi_device *dev, uint8_t contrast);
+
+/**
+ * @brief Instruct the SSD1306 to ignore RAM and turn entire display on or follow
+ * RAM
+ * 
+ * @param device Desired target device
+ * @param enable True - Ignore RAM. False - Follow RAM.
+ */
 void ssd1306_set_ignore_ram(ssd1306_spi_device *device, bool enable);
+
+/**
+ * @brief Enables/Disables display inversion. During normal operation 0 = OFF,
+ * 1 = ON. During inverted operation 0 = ON, 1 = OFF.
+ * 
+ * @param device Desired target device
+ * @param invert Desired state of the display inversion
+ */
 void ssd1306_set_invert_display(ssd1306_spi_device *device, bool invert);
+
+/**
+ * @brief Sets the memory addressing mode of the SSD1306. 
+ * 00b, Horizontal Addressing Mode
+ * 01b, Vertical Addressing Mode
+ * 10b, Page Addressing Mode (RESET)
+ * 11b, Invalid
+ * 
+ * @param device Desired target device
+ * @param mode Desired addressing mode
+ */
 void ssd1306_set_addressing(ssd1306_spi_device *device, uint8_t mode);
+
+/**
+ * @brief Sets the start/end addresses for the columns/pages of the SSD1306
+ * 
+ * @param device Desired target device
+ * @param start_col Starting column address
+ * @param end_col Ending column address
+ * @param start_page Starting page address
+ * @param end_page Ending page address
+ */
 void ssd1306_set_cursor(ssd1306_spi_device *device, uint8_t start_col, uint8_t end_col, uint8_t start_page, uint8_t end_page);
+
+/**
+ * @brief Resets the cursor
+ * 
+ * @param device Desired target device
+ */
 void ssd1306_reset_cursor(ssd1306_spi_device *device);
+
+/**
+ * @brief Writes to the GDDRAM of the SSD1306
+ * 
+ * @param device Desired target device
+ * @param buffer Buffer of uint8_t bytes to write to the display
+ * @param buffer_length Length of the buffer in bytes
+ */
 void ssd1306_display(ssd1306_spi_device *device, const uint8_t *buffer, uint32_t buffer_length);
 
 class SSD1306
