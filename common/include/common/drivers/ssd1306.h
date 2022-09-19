@@ -76,8 +76,12 @@ void ssd1306_reset_cursor(SSD1306Dev *dev);
 void ssd1306_write(ssd1306_spi_device *device, ssd1306_write_type type, const uint8_t *buffer,
                    uint32_t buffer_length);
 void ssd1306_initialize_device(ssd1306_spi_device *dev);
-void ssd1306_ignore_ram(ssd1306_spi_device *device, bool enable);
+void ssd1306_set_display_enable(ssd1306_spi_device *dev, bool enable);
+void ssd1306_set_contrast(ssd1306_spi_device *dev, uint8_t contrast);
+void ssd1306_set_ignore_ram(ssd1306_spi_device *device, bool enable);
+void ssd1306_set_invert_display(ssd1306_spi_device *device, bool invert);
 void ssd1306_set_addressing(ssd1306_spi_device *device, uint8_t mode);
+void ssd1306_set_cursor(ssd1306_spi_device *device, uint8_t start_col, uint8_t end_col, uint8_t start_page, uint8_t end_page);
 void ssd1306_reset_cursor(ssd1306_spi_device *device);
 void ssd1306_display(ssd1306_spi_device *device, const uint8_t *buffer, uint32_t buffer_length);
 

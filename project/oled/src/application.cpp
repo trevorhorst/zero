@@ -17,13 +17,41 @@
 #define PIN_DISPLAY_DC  27
 #define PIN_DISPLAY_CS  28
 
-#define BUS_SPEED_KHZ(x) x * 1000
+
+#define PIN_INCREASE_CLOCK   6
+#define PIN_DECREASE_CLOCK   7
+
 #define BUS_SPEED_KHZ(x) x * 1000
 
 #define SSD1306_DISPLAY_ADDR    0x3D
 
 #define SPRITE_WIDTH    56
 #define SPRITE_HEIGHT   56
+
+static uint32_t debounce_generate_fact = to_ms_since_boot(get_absolute_time());
+static const uint32_t debounce_delay_time = 1000;
+
+static uint32_t spi_speed = BUS_SPEED_KHZ(750);
+
+void generate_fact(uint gpio, uint32_t events)
+{
+    uint32_t currentTime = to_ms_since_boot(get_absolute_time());
+    if(gpio == PIN_INCREASE_CLOCK) {
+        if((currentTime - debounce_generate_fact) > debounce_delay_time) {
+            // Increase SPI speed
+            spi_speed += BUS_SPEED_KHZ(50);
+            spi_init(spi0, spi_speed);
+            printf("SPI Speed: %d\n", spi_speed);
+        }
+    } else if(gpio == PIN_DECREASE_CLOCK) {
+        if((currentTime - debounce_generate_fact) > debounce_delay_time) {
+            // Decrease SPI speed
+            spi_speed -= BUS_SPEED_KHZ(50);
+            spi_init(spi0, spi_speed);
+            printf("SPI Speed: %d\n", spi_speed);
+        }
+    }
+}
 
 void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, BmpSprite *sprite)
 {
@@ -76,6 +104,10 @@ int32_t application_run()
     sleep_ms(1000);
 
     LOG_INFO("Initialize GPIO...\n");
+    // Initialize IRQ
+    gpio_set_irq_enabled_with_callback(PIN_INCREASE_CLOCK, GPIO_IRQ_EDGE_RISE, true, &generate_fact);
+    gpio_set_irq_enabled_with_callback(PIN_DECREASE_CLOCK, GPIO_IRQ_EDGE_RISE, true, &generate_fact);
+
     // Initialize DC pin
     gpio_init(PIN_DISPLAY_DC);
     gpio_set_dir(PIN_DISPLAY_DC, GPIO_OUT);
