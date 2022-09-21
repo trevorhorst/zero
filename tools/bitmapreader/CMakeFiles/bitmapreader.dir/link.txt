@@ -1,1 +1,0 @@
-/usr/bin/cc    CMakeFiles/bitmapreader.dir/main.c.o CMakeFiles/bitmapreader.dir/bmpspritesheet.c.o  -o bitmapreader 
