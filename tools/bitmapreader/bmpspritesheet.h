@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#define BMPSS_PRINT_WHITE       "@"
+#define BMPSS_PRINT_GRAY        "*"
+#define BMPSS_PRINT_DARK_GRAY   ":"
+#define BMPSS_PRINT_BLACK       " "
+
 typedef struct {
     uint8_t signature[2];
     uint32_t fileSize;
@@ -77,6 +82,8 @@ int32_t bmpss_scanline_width(BmpSpriteSheet *ss);
  * @param ss Pointer to a sprite sheet object
  */
 void bmpss_print_sheet(BmpSpriteSheet *ss);
+
+void bmpss_print_grayscale_sheet(BmpSpriteSheet *ss);
 
 /**
  * @brief  Prints a subset of the sprite sheet for easy viewing 
