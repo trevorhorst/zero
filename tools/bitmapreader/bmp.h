@@ -5,10 +5,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+// Inverted since terminal is dark and chars are white
 #define BMPSS_PRINT_WHITE       "@"
 #define BMPSS_PRINT_GRAY        "*"
-#define BMPSS_PRINT_DARK_GRAY   ":"
+#define BMPSS_PRINT_DARK_GRAY   "-"
 #define BMPSS_PRINT_BLACK       " "
+static const uint8_t ascii_grayscale[] = {' ', '*', '-', '@', 'X', 'X', 'X', 'X'};
+static const uint8_t reverse_2_bit[] = {0b00, 0b10, 0b01, 0b11};
 
 typedef struct {
     uint8_t signature[2];
@@ -57,6 +60,14 @@ typedef struct {
     int32_t y;
 } BmpSprite;
 
+typedef struct {
+    int32_t height;
+    int32_t width;
+    int32_t x;
+    int32_t y;
+    uint8_t *sprite;
+} bmp_grayscale_sprite;
+
 /**
  * @brief Initialize the sprite sheet struct 
  * 
@@ -65,6 +76,8 @@ typedef struct {
  * @return int8_t Value indicating success of the operation (0 on success)
  */
 int8_t bmpss_initialize(BmpSpriteSheet *ss, const char *filename);
+
+int8_t bmpss_grayscale_sprite_initialize(BmpSpriteSheet *ss, bmp_grayscale_sprite *sprite);
 
 /**
  * @brief De-Initialize the sprite sheet struct
@@ -92,5 +105,11 @@ void bmpss_print_grayscale_sheet(BmpSpriteSheet *ss);
  * @param sprite Pointer to a sprite object
  */
 void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite);
+
+void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, BmpSprite *sprite);
+
+void bmpss_print_grayscale_sprite_(bmp_grayscale_sprite *sprite);
+
+void bmpss_grayscale_dither(bmp_grayscale_sprite *sprite);
 
 #endif // BMPSPRITESHEET_H

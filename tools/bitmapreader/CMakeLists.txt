@@ -11,6 +11,6 @@ project(bitmapreader
 add_executable(
     ${PROJECT_NAME}
         main.c
-        bmpspritesheet.h
-        bmpspritesheet.c
+        bmp.h
+        bmp.c
 )

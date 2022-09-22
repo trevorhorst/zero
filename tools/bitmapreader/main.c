@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <stdint.h>
 
-#include "bmpspritesheet.h"
+#include "bmp.h"
 
 static const char *bmp_file = "red-blue-grayscale.bmp";
 
@@ -22,11 +22,16 @@ int main(int argc, char *argv[])
     BmpSpriteSheet ss;
     bmpss_initialize(&ss, bmp_file);
 
+    bmp_grayscale_sprite gs_sprite;
+    gs_sprite.height = SPRITE_HEIGHT;
+    gs_sprite.width  = SPRITE_WIDTH;
+
     BmpSprite sprite;
     sprite.height = SPRITE_HEIGHT;
     sprite.width = SPRITE_WIDTH;
     sprite.x = 0;
     sprite.y = 0;
+
 
     if(dexNumber >= 1 && dexNumber <= 151) {
         // Calculate the x, y coordinates of our pokemon sprite
@@ -40,8 +45,14 @@ int main(int argc, char *argv[])
         printf("(%d, %d)\n", sprite.x, sprite.y);
     }
 
+    gs_sprite.x = sprite.x;
+    gs_sprite.y = sprite.y;
+    bmpss_grayscale_sprite_initialize(&ss, &gs_sprite);
+
     // // Print the desired sprite
-    bmpss_print_grayscale_sprite(&ss, &sprite);
+    // bmpss_print_grayscale_sprite(&ss, &sprite);
+    bmpss_print_grayscale_sprite_(&gs_sprite);
+    bmpss_grayscale_dither(&gs_sprite);
     // bmpss_print_raw_data(ss.bitmap.pixel_data, (ss.bitmap.header.fileSize - ss.bitmap.header.dataOffset), 8);
     // pss_print_grayscale_sheet(&ss);
     
