@@ -50,7 +50,7 @@ typedef struct {
     Bitmap bitmap;
 } BmpSpriteSheet;
 
-typedef struct {
+typedef struct bmp_sprite_view_t {
     int32_t height;
     int32_t width;
     int32_t x;
@@ -58,7 +58,18 @@ typedef struct {
     int8_t invert;
     int8_t magnify;
     int16_t rotate;
-} BmpSprite;
+} bmp_sprite_view;
+
+typedef struct bmp_sprite_t {
+    int32_t height;
+    int32_t width;
+    int32_t x;
+    int32_t y;
+    int8_t invert;
+    int8_t magnify;
+    int16_t rotate;
+    uint8_t *sprite;
+} bmp_sprite;
 
 /**
  * @brief Initialize the sprite sheet struct 
@@ -70,6 +81,8 @@ typedef struct {
 int8_t bmpss_initialize(BmpSpriteSheet *ss, const char *filename);
 
 int8_t bmpss_initialize(BmpSpriteSheet *ss, char *resource, unsigned int resource_size);
+
+int8_t bmpss_sprite_initialize(BmpSpriteSheet *ss, bmp_sprite *sprite);
 
 /**
  * @brief De-Initialize the sprite sheet struct
@@ -97,12 +110,12 @@ void bmpss_print_grayscale_sheet(BmpSpriteSheet *ss);
  * @param ss Pointer to a sprite sheet object
  * @param sprite Pointer to a sprite object
  */
-void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite);
+void bmpss_print_sprite(BmpSpriteSheet *ss, bmp_sprite_view *sprite);
 
 void bmpss_print_pixel(uint8_t byte);
 
 void bmpss_print_grayscale_pixel(uint8_t byte);
 
-void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, BmpSprite *sprite);
+void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, bmp_sprite_view *sprite);
 
 #endif // BMPSPRITESHEET_H

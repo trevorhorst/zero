@@ -29,31 +29,42 @@
 #define SPRITE_HEIGHT   56
 
 static uint32_t debounce_generate_fact = to_ms_since_boot(get_absolute_time());
-static const uint32_t debounce_delay_time = 1000;
-
-static uint32_t spi_speed = BUS_SPEED_KHZ(750);
+static const uint32_t debounce_delay_time = 250;
+static int32_t dex_number = 1;
+static int8_t trigger_update = 0;
 
 void generate_fact(uint gpio, uint32_t events)
 {
     uint32_t currentTime = to_ms_since_boot(get_absolute_time());
     if(gpio == PIN_INCREASE_CLOCK) {
         if((currentTime - debounce_generate_fact) > debounce_delay_time) {
-            // Increase SPI speed
-            spi_speed += BUS_SPEED_KHZ(50);
-            spi_init(spi0, spi_speed);
-            printf("SPI Speed: %d\n", spi_speed);
+            // Increase SPI spee
+            dex_number++;
+            trigger_update = 1;
+            if(dex_number < 1) {
+                dex_number = 151;
+            } else if(dex_number > 151) {
+                dex_number = 1;
+            }
+            debounce_generate_fact = currentTime;
         }
     } else if(gpio == PIN_DECREASE_CLOCK) {
         if((currentTime - debounce_generate_fact) > debounce_delay_time) {
             // Decrease SPI speed
-            spi_speed -= BUS_SPEED_KHZ(50);
-            spi_init(spi0, spi_speed);
-            printf("SPI Speed: %d\n", spi_speed);
+            dex_number--;
+            trigger_update = 1;
+            if(dex_number < 1) {
+                dex_number = 151;
+            } else if(dex_number > 151) {
+                dex_number = 1;
+            }
+            debounce_generate_fact = currentTime;
         }
     }
 }
 
-void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, BmpSprite *sprite)
+
+void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, bmp_sprite_view *sprite)
 {
     // Calculate the x, y coordinates of our pokemon sprite
     int32_t sheetWidth = ss->bitmap.info_header.width / sprite->width;
@@ -63,7 +74,7 @@ void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, BmpSprite *sprite)
     int32_t y = (sheetSprites - index) / sheetWidth;
     sprite->x = sprite->width * x;
     sprite->y = sprite->height * y;
-    // printf("sprite %d: (%d, %d)\n", index, sprite->x, sprite->y);
+    printf("sprite %d: (%d, %d)\n", index, sprite->x, sprite->y);
 }
 
 void initialize_i2c()
@@ -85,7 +96,7 @@ void initialize_spi(spi_inst_t *bus)
     gpio_set_function(PIN_SPI_MOSI, GPIO_FUNC_SPI);
 
     // Initialize the SPI port to 
-    spi_init(bus, BUS_SPEED_KHZ(750));
+    spi_init(bus, BUS_SPEED_KHZ(370*4));
     spi_set_format(
         bus,
         8,
@@ -152,14 +163,14 @@ int32_t application_run()
     bmpss_initialize(&ss_font, red_blue_font_bmp, red_blue_font_bmp_size);
 
     // Initialize our sprites
-    BmpSprite sprite;
+    bmp_sprite_view sprite;
     sprite.height = SPRITE_HEIGHT;
     sprite.width = SPRITE_WIDTH;
     sprite.invert = 0;
     sprite.magnify = 1;
     sprite.rotate = CANVAS_ROTATE_270;
 
-    BmpSprite font_sprite;
+    bmp_sprite_view font_sprite;
     font_sprite.height = 8;
     font_sprite.width = 8;
     font_sprite.x = 56;
@@ -228,38 +239,32 @@ int32_t application_run()
     uint32_t framestart = 0;
     uint32_t frameend = 0;
     uint32_t frames = 0;
+    trigger_update = 1;
     do {
-        if((dexNumber < 1) || (dexNumber > 151)) {
-            // Reset the dex counter if we go out of bounds
-            dexNumber = 1;
-        } 
+        if(trigger_update) {
+            // Select the pokemon sprite
+            index_to_sprite(dex_number, &ss, &sprite);
+            // index_to_sprite(1, &ss_font, &font_sprite);
 
-        // Select the pokemon sprite
-        index_to_sprite(dexNumber, &ss, &sprite);
-        // index_to_sprite(1, &ss_font, &font_sprite);
-
-        for(uint32_t layer = 0; layer < 3; layer++) {
-            canvas_draw_grayscale_bmp_sprite(&framebuffer[layer], &(ss_grayscale.bitmap),
-                                             &sprite, layer, offset_x, offset_y);
-        }
-
-        // ssd1306_reset_cursor(&display);
-        frames = 0;
-        framestart = to_ms_since_boot(get_absolute_time());
-        frameend = framestart;
-        while((frameend - framestart) < 1000) {
-            for(uint32_t i = 0; i < 3; i++) {
-                // We shouldn't have to reset the cursor if the entire screen is
-                // being written, the display will automaatically wraparound
-                ssd1306_display(&display, gs_buffer[i], gs_buffer_length);
+            for(uint32_t layer = 0; layer < 3; layer++) {
+                canvas_draw_grayscale_bmp_sprite(&framebuffer[layer], &(ss_grayscale.bitmap),
+                                                &sprite, layer, offset_x, offset_y);
             }
-            frames += 1;
-            frameend = to_ms_since_boot(get_absolute_time());
+            trigger_update = 0;
         }
 
-        dexNumber++;
-
-        printf("FPS: %d\n", frames);
+        // frames = 0;
+        // framestart = to_ms_since_boot(get_absolute_time());
+        // frameend = framestart;
+        // while((frameend - framestart) < 1000) {
+        for(uint32_t i = 0; i < 3; i++) {
+            // We shouldn't have to reset the cursor if the entire screen is
+            // being written, the display will automaatically wraparound
+            ssd1306_display(&display, gs_buffer[i], gs_buffer_length);
+        }
+        //     frames += 1;
+        //     frameend = to_ms_since_boot(get_absolute_time());
+        // }
     } while(true);
 
     // Cleanup

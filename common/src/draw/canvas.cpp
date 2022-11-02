@@ -135,7 +135,7 @@ void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start,
     int dy = (int)y_end - (int)y_start <= 0 ? y_end - y_start : y_start - y_end;
 }
 
-void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
+void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite,
                             uint32_t offset_x, uint32_t offset_y)
 {
     uint8_t size = sprite->magnify;
@@ -208,7 +208,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
     }
 }
 
-void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite, uint32_t layer,
+void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite, uint32_t layer,
                             uint32_t offset_x, uint32_t offset_y)
 {
     uint8_t size = sprite->magnify;

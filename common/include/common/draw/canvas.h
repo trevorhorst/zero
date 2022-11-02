@@ -54,10 +54,10 @@ void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
 void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start, 
                       uint32_t x_end, uint32_t y_end);
 
-void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite,
+void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite,
                             uint32_t offset_x, uint32_t offset_y);
 
-void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, BmpSprite *sprite, uint32_t layer,
+void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite, uint32_t layer,
                             uint32_t offset_x, uint32_t offset_y);
 
 #endif // DRAW_CANVAS_H

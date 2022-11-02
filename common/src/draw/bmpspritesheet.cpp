@@ -118,6 +118,12 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, char *resource, unsigned int resourc
     return success;
 }
 
+int8_t bmpss_sprite_initialize(BmpSpriteSheet *ss, bmp_sprite *sprite)
+{
+    int8_t success = 0;
+    return success;
+}
+
 int8_t bmpss_deinitialize(BmpSpriteSheet *ss)
 {
     int8_t success = 0;
@@ -150,7 +156,7 @@ void bmpss_print_sheet(BmpSpriteSheet *ss)
     }
 }
 
-void bmpss_print_sprite(BmpSpriteSheet *ss, BmpSprite *sprite)
+void bmpss_print_sprite(BmpSpriteSheet *ss, bmp_sprite_view *sprite)
 {
     int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
     for(int32_t h = 0; h < sprite->height; h++) {
@@ -188,7 +194,7 @@ void bmpss_print_grayscale_pixel(uint8_t byte)
     }
 }
 
-void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, BmpSprite *sprite)
+void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, bmp_sprite_view *sprite)
 {
     int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
     for(int32_t h = sprite->height - 1; h >= 0; h--) {
