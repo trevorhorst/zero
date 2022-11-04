@@ -7,7 +7,7 @@ project(
 )
 # enable_language( C ASM )
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.c)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(${PROJECT_NAME} 1)
