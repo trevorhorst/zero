@@ -94,9 +94,10 @@ void check_ram_board(conways_game *game, bool debug)
     for(int32_t column = 0; column < game->height; column++) {
         if(debug){ printf("%02d|", column); }
         for(int32_t page = 0; page < game->width; page++) {
+            int32_t x = (column * game->width);
+            int32_t y = page;
+            game->buffer[x + y] = 0;
             for(int32_t shift = 0; shift < page_width_bits; shift++) {
-                int32_t x = (column * game->width);
-                int32_t y = page;
                 uint8_t bit = 1 << shift;
 
                 int32_t neighbors = 0;
@@ -181,6 +182,7 @@ void check_ram_board(conways_game *game, bool debug)
                     }
                 }
 
+                if(debug){ printf("%d", neighbors); }
                 if(neighbors == 2) {
                     // Cell survives
                     game->buffer[x + y] |= (game->board[x + y] & bit);
@@ -191,7 +193,6 @@ void check_ram_board(conways_game *game, bool debug)
                     // Cell dies
                     game->buffer[x + y] &= ~bit;
                 }
-                if(debug){ printf("%d", neighbors); }
             }
             if(debug){ printf("|"); }
         }

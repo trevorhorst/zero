@@ -163,8 +163,8 @@ int32_t application_run()
     // Since we are using vertical addressing, swap our height and width parameters
     // uint32_t image_width_bytes  = OLED_HEIGHT;
     // uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
-    uint32_t image_width_bytes  = 2; // (OLED_HEIGHT % 8 == 0) ? (OLED_HEIGHT / 8) : ((OLED_HEIGHT / 8) + 1);
-    uint32_t image_height_bytes = 16; // OLED_WIDTH;
+    uint32_t image_width_bytes  = (OLED_HEIGHT % 8 == 0) ? (OLED_HEIGHT / 8) : ((OLED_HEIGHT / 8) + 1);
+    uint32_t image_height_bytes = OLED_WIDTH;
 
     conways_initialize(&game, image_width_bytes, image_height_bytes);
     ssd1306_display(&display, game.board, (game.height * game.width));
@@ -206,7 +206,6 @@ int32_t application_run()
             game.buffer = temp;
             ssd1306_display(&display, game.board, (game.height * game.width));
         }
-        // conways_run();
         // ssd1306_display(&display, game.board, (game.height * game.width));
         sleep_ms(125);
     }
