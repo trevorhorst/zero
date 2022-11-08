@@ -3,11 +3,12 @@
 
 #include <stdio.h>
 #include <stdint.h>
-// #include <stdlib.h>
+#include <stdlib.h>
 
 #include "pico/stdlib.h"
+#include "pico/time.h"
 #include "pico/multicore.h"
-#include "hardware/i2c.h"
+#include "hardware/spi.h"
 
 // #include "common/command/command_handler.h"
 // #include "common/command/command_help.h"
@@ -22,31 +23,5 @@
 #endif // CONWAYS_VERSION
 
 int32_t application_run();
-
-// class Application
-// {
-// public:
-//     static const uint32_t pin_game_reset;
-//     static const uint32_t pin_game_speed;
-//     static const uint32_t pin_i2c1_sda;
-//     static const uint32_t pin_i2c1_scl;
-//
-//     static const uint8_t ssd1306_display_addr;
-//
-//     Application();
-//
-//     void initialize();
-//     void initializeI2C();
-//     void initializeDisplay();
-//     void initializeConsole();
-//
-//     int32_t run();
-//
-// private:
-//     SSD1306 mDisplay;
-//
-//     CommandHandler mHandler;
-//     CommandHelp mCmdHelp;
-// };
 
 #endif // CONWAYS_APPLICATION_H

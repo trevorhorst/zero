@@ -10,14 +10,14 @@ project(
 set( SOURCE
     ${SOURCE}
     src/application.c
-    # src/game.cpp
+    src/game.c
     )   
 
 # List of header files
 set( HEADERS
     ${HEADERS}
     include/project/application.h
-    # include/project/game.h
+    include/project/game.h
     )   
 
 add_library(

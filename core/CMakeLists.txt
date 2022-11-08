@@ -10,6 +10,7 @@ project(
 set(SOURCE
     ${SOURCE}
     src/console/console.c
+    src/drivers/ssd1306.c
     src/json/cjson.c
     src/logger.c
     src/types/hash_table.c
@@ -19,6 +20,7 @@ set(SOURCE
 set(HEADERS
     ${HEADERS}
     include/core/console/console.h
+    include/core/drivers/ssd1306.h
     include/core/json/cjson.h
     include/core/logger.h
     include/core/types/hash_table.h
