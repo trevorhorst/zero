@@ -10,7 +10,13 @@ void conways_initialize(conways_game *game, uint32_t width, uint32_t height)
     game->height = height;
     game->board = (uint8_t*)malloc(sizeof(uint8_t) * size);
     game->buffer = (uint8_t*)malloc(sizeof(uint8_t) * size);
-    for(uint32_t i = 0; i < size; i++) {
+    conways_reset(game);
+}
+
+void conways_reset(conways_game *game)
+{
+    game->generation = 0;
+    for(uint32_t i = 0; i < (game->height * game->width); i++) {
         game->board[i] = rand() % 255;
         game->buffer[i] = 0;
     }
@@ -88,7 +94,7 @@ void print_ram_buffer(conways_game *game)
     }
 }
 
-void check_ram_board(conways_game *game, bool debug)
+void step_ram_board(conways_game *game, bool debug)
 {
     int32_t page_width_bits = 8;
     for(int32_t column = 0; column < game->height; column++) {
@@ -198,6 +204,8 @@ void check_ram_board(conways_game *game, bool debug)
         }
         if(debug){ printf("\n"); }
     }
+
+    game->generation++;
 }
 
 void conways_run(conways_game *game)
@@ -219,7 +227,7 @@ void conways_run(conways_game *game)
 
         // Simulate the new generation
         // printf("Generation: %d\n", gen++);
-        check_ram_board(game, false);
+        step_ram_board(game, false);
 
 
         // // Print the current generation and the board

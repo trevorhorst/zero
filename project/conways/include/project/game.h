@@ -12,12 +12,14 @@ typedef struct conways_game_t {
     uint8_t *buffer;
     uint32_t width;
     uint32_t height;
+    uint32_t generation;
 } conways_game;
 
 void print_ram_board(conways_game *game);
 void print_ram_buffer(conways_game *game);
-void check_ram_board(conways_game *game, bool debug);
+void step_ram_board(conways_game *game, bool debug);
 void conways_initialize(conways_game *game, uint32_t width, uint32_t height);
+void conways_reset(conways_game *game);
 void conways_run();
 
 // void conwaysSetDisplay(SSD1306 *display);

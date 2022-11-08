@@ -19,18 +19,21 @@
 #define PIN_DISPLAY_CS  28
 
 
-#define CMD_TEST    "test"
+#define CMD_TEST     "test"
 #define CMD_PRINT    "print"
 #define CMD_CHECK    "check"
 #define CMD_STEP     "step"
 #define CMD_BUFFER   "buffer"
-#define CMD_RUN     "run"
-#define CMD_STOP    "stop"
+#define CMD_RUN      "run"
+#define CMD_STOP     "stop"
+#define CMD_RESET    "reset"
 
 static conways_game game;
 static ssd1306_spi_device display;
 
-static bool running = false;
+static bool running = true;
+static bool reset_flag   = false;
+static bool speed_flag   = false;
 
 uint32_t test_callback()
 {
@@ -59,13 +62,18 @@ uint32_t print_buffer()
 
 uint32_t check_board()
 {
-    check_ram_board(&game, true);
+    step_ram_board(&game, true);
+}
+
+uint32_t reset_board()
+{
+    conways_reset(&game);
 }
 
 uint32_t step_board()
 {
     print_ram_board(&game);
-    check_ram_board(&game, true);
+    step_ram_board(&game, true);
 
     uint8_t *temp = game.board;
     game.board = game.buffer;
@@ -76,21 +84,21 @@ uint32_t step_board()
 
 void application_initialize_spi()
 {
-	LOG_INFO("Initialize SPI...\n");
-	
-	// Configure clk and data pins
-	gpio_set_function(PIN_SPI_SCK, GPIO_FUNC_SPI);
-	gpio_set_function(PIN_SPI_MOSI, GPIO_FUNC_SPI);
+    LOG_INFO("Initialize SPI...\n");
+    
+    // Configure clk and data pins
+    gpio_set_function(PIN_SPI_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SPI_MOSI, GPIO_FUNC_SPI);
 
-	// Initialize the SPI port to 
-	spi_init(spi0, SPI_BUS_SPEED_KHZ(370*4));
-	spi_set_format(
-		spi0,
-		8,
-		SPI_CPOL_1,
-		SPI_CPHA_1,
-		SPI_MSB_FIRST
-	);
+    // Initialize the SPI port to 
+    spi_init(spi0, SPI_BUS_SPEED_KHZ(370*4));
+    spi_set_format(
+        spi0,
+        8,
+        SPI_CPOL_1,
+        SPI_CPHA_1,
+        SPI_MSB_FIRST
+    );
 }
 
 void gpio_callback(uint gpio, uint32_t events) {
@@ -107,12 +115,14 @@ void gpio_callback(uint gpio, uint32_t events) {
         if((currentTime - debounce_reset_button) > DEBOUNCE_DELAY_TIME) {
             debounce_reset_button = currentTime;
             printf("RESET BUTTON PRESSED\n");
+            reset_flag = true;
             // conwaysSetReset();
         }
     } else if(gpio == PIN_GAME_SPEED_BTN) {
         if((currentTime - debounce_speed_button) > DEBOUNCE_DELAY_TIME) {
             debounce_speed_button = currentTime;
             printf("SPEED BUTTON PRESSED\n");
+            speed_flag = true;
             // conwaysStepSpeed();
         }
     }
@@ -168,16 +178,17 @@ int32_t application_run()
 
     conways_initialize(&game, image_width_bytes, image_height_bytes);
     ssd1306_display(&display, game.board, (game.height * game.width));
-    print_ram_board(&game);
-    // check_ram_board(&game);
+    // print_ram_board(&game);
+    // step_ram_board(&game);
 
-    struct console_command cmd_test = {&test_callback};
-    struct console_command cmd_print = {&print_board};
+    struct console_command cmd_test   = {&test_callback};
+    struct console_command cmd_print  = {&print_board};
     struct console_command cmd_buffer = {&print_buffer};
-    struct console_command cmd_check = {&check_board};
-    struct console_command cmd_step = {&step_board};
-    struct console_command cmd_run = {&run_game};
-    struct console_command cmd_stop = {&stop_game};
+    struct console_command cmd_check  = {&check_board};
+    struct console_command cmd_step   = {&step_board};
+    struct console_command cmd_run    = {&run_game};
+    struct console_command cmd_stop   = {&stop_game};
+    struct console_command cmd_reset  = {&reset_board};
     console_initialize();
     console_add_command(CMD_TEST, &cmd_test);
     console_add_command(CMD_PRINT, &cmd_print);
@@ -186,6 +197,7 @@ int32_t application_run()
     console_add_command(CMD_STEP, &cmd_step);
     console_add_command(CMD_STOP, &cmd_stop);
     console_add_command(CMD_RUN, &cmd_run);
+    console_add_command(CMD_RESET, &cmd_reset);
 
     // Initialize interrupts
     gpio_set_irq_enabled_with_callback(PIN_GAME_RESET_BTN, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
@@ -196,18 +208,25 @@ int32_t application_run()
 
     multicore_launch_core1(console_run);
 
+    uint8_t count = 0;
     while(true) {
-        // step_board();
-        if(running) {
-            check_ram_board(&game, false);
+        if(running && (count == 0)) {
+            step_ram_board(&game, false);
 
             uint8_t *temp = game.board;
             game.board = game.buffer;
             game.buffer = temp;
             ssd1306_display(&display, game.board, (game.height * game.width));
         }
-        // ssd1306_display(&display, game.board, (game.height * game.width));
-        sleep_ms(125);
+
+        if(reset_flag) {
+            reset_board();
+            reset_flag = false;
+        }
+
+        count = (count + 1) % 16;
+
+        sleep_ms(25);
     }
 
     return 0;
