@@ -33,7 +33,7 @@ static ssd1306_spi_device display;
 
 static bool running = true;
 static bool reset_flag   = false;
-static bool speed_flag   = false;
+static uint8_t game_speed = 0x1;
 
 uint32_t test_callback()
 {
@@ -122,7 +122,10 @@ void gpio_callback(uint gpio, uint32_t events) {
         if((currentTime - debounce_speed_button) > DEBOUNCE_DELAY_TIME) {
             debounce_speed_button = currentTime;
             printf("SPEED BUTTON PRESSED\n");
-            speed_flag = true;
+            game_speed++;
+            if(game_speed > 5) {
+                game_speed = 0;
+            }
             // conwaysStepSpeed();
         }
     }
@@ -210,17 +213,21 @@ int32_t application_run()
 
     uint8_t count = 0;
     while(true) {
-        if(running && (count == 0)) {
-            step_ram_board(&game, false);
+        if(running && (game_speed != 5)) {
+            uint32_t speed = 0x10 >> game_speed;
+            if(count % speed == 0) {
+                step_ram_board(&game, false);
 
-            uint8_t *temp = game.board;
-            game.board = game.buffer;
-            game.buffer = temp;
-            ssd1306_display(&display, game.board, (game.height * game.width));
+                uint8_t *temp = game.board;
+                game.board = game.buffer;
+                game.buffer = temp;
+                ssd1306_display(&display, game.board, (game.height * game.width));
+            }
         }
 
         if(reset_flag) {
             reset_board();
+            ssd1306_display(&display, game.board, (game.height * game.width));
             reset_flag = false;
         }
 
