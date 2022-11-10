@@ -9,6 +9,7 @@ project(
 # List of source files
 set(SOURCE
     ${SOURCE}
+    src/command/command.c
     src/console/console.c
     src/drivers/ssd1306.c
     src/json/cjson.c
@@ -19,6 +20,7 @@ set(SOURCE
 # List of header files
 set(HEADERS
     ${HEADERS}
+    include/core/command/command.h
     include/core/console/console.h
     include/core/drivers/ssd1306.h
     include/core/json/cjson.h

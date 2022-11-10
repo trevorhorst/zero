@@ -148,7 +148,7 @@ void hash_table_resize(struct hash_table *map)
         LOG_DEBUG("Bucket %d\n", i);
         struct hash_bucket *it = &map->buckets[i];
         while(it != NULL && (it->value != NULL)) {
-            printf("  %lu\n", it->hash);
+            LOG_DEBUG("  %lu\n", it->hash);
             hash_table_insert(&new_map, it->key, it->value);
             it = it->next;
         }
@@ -158,6 +158,18 @@ void hash_table_resize(struct hash_table *map)
     map->buckets = new_map.buckets;
     map->n       = new_map.n;
     map->k       = new_map.k;
+}
+
+void hash_table_traverse(struct hash_table *map)
+{
+    for(unsigned int i = 0; i < map->k; i++) {
+        LOG_DEBUG("Bucket %d\n", i); 
+        struct hash_bucket *it = &map->buckets[i];
+        while(it != NULL) {
+            printf("  %s: %lu\n", it->key, it->hash);
+            it = it->next;
+        }
+    }   
 }
 
 unsigned long hash_table_djb2(const char *str)

@@ -1,5 +1,7 @@
 #include "core/drivers/ssd1306.h"
+#include "core/command/command.h"
 #include "core/console/console.h"
+#include "core/types/hash_table.h"
 #include "core/version.h"
 #include "core/logger.h"
 
@@ -27,6 +29,11 @@
 #define CMD_RUN      "run"
 #define CMD_STOP     "stop"
 #define CMD_RESET    "reset"
+#define CMD_GAME     "game"
+
+typedef struct parameter_callback_t {
+    int32_t (*callback)(char *value);
+} param_callback;
 
 static conways_game game;
 static ssd1306_spi_device display;
@@ -35,19 +42,32 @@ static bool running = true;
 static bool reset_flag   = false;
 static uint8_t game_speed = 0x1;
 
-uint32_t test_callback()
+uint32_t test_callback(int32_t argc, char **argv)
 {
-    printf("Hello Test\n");
+    printf("%s command\n", argv[0]);
+    printf("There are %d arguments\n", argc);
+    for(uint32_t i = 0; i < argc; i++) {
+        printf("%s ", argv[i]);
+    }
+    printf("\n");
 }
 
-uint32_t run_game()
+/**
+ * @brief Sets the run flag for the game, to be handle in the main loop
+ * 
+ * @param value Value of run flag
+ * @return int32_t 
+ */
+void run_game(bool value)
 {
-    running = true;
+    running = value;
 }
 
-uint32_t stop_game()
+void reset_game(bool value)
 {
-    running = false;
+    if(value) {
+        conways_reset(&game);
+    }
 }
 
 uint32_t print_board()
@@ -65,11 +85,6 @@ uint32_t check_board()
     conways_run_generation(&game, true);
 }
 
-uint32_t reset_board()
-{
-    conways_reset(&game);
-}
-
 uint32_t step_board()
 {
     conways_print_game_board(&game);
@@ -80,6 +95,52 @@ uint32_t step_board()
     game.buffer = temp;
     ssd1306_display(&display, game.board, (game.height * game.width));
     conways_print_game_board(&game);
+}
+
+int32_t game_parameter_run(char *value)
+{
+    int32_t error = 0;
+    bool running = false;
+    if(param_to_bool(value, &running) >= 0) {
+        run_game(running);
+    } else {
+        error = -1;
+    }
+    return error;
+}
+
+int32_t game_parameter_reset(char *value)
+{
+    int32_t error = 0;
+    bool reset = false;
+    if(param_to_bool(value, &reset) >= 0) {
+        reset_game(reset);
+    } else {
+        error = -1;
+    }
+    return error;
+}
+
+uint32_t command_game(int32_t argc, char **argv)
+{
+    struct hash_table game_params;
+    param_callback param_run = {&game_parameter_run};
+    param_callback param_reset = {&game_parameter_reset};
+
+    hash_table_initialize(&game_params, 10);
+    hash_table_insert(&game_params, CMD_RUN, (void*)&param_run);
+    hash_table_insert(&game_params, CMD_RESET, (void*)&param_reset);
+
+
+    for(int32_t i = 1; i < argc; i = i + 2) {
+        param_callback *cb = (param_callback*)hash_table_get(&game_params, argv[i]);
+        if(cb) {
+            if(cb->callback(argv[i+1]) == 0) {
+            } else {
+                LOG_WARN("%s command failed. Failed to set %s to %s\n", argv[0], argv[i], argv[i + 1]);
+            }
+        }
+    }
 }
 
 void application_initialize_spi()
@@ -194,24 +255,23 @@ int32_t application_run()
     application_initialize_display();
     application_initialize_game();
 
-	struct console_command cmd_test   = {&test_callback};
-	struct console_command cmd_print  = {&print_board};
-	struct console_command cmd_buffer = {&print_buffer};
-	struct console_command cmd_check  = {&check_board};
-	struct console_command cmd_step   = {&step_board};
-	struct console_command cmd_run    = {&run_game};
-	struct console_command cmd_stop   = {&stop_game};
-	struct console_command cmd_reset  = {&reset_board};
+    struct console_command cmd_test   = {&test_callback};
+    struct console_command cmd_game   = {&command_game};
+    // struct console_command cmd_print  = {&print_board};
+    // struct console_command cmd_buffer = {&print_buffer};
+    // struct console_command cmd_check  = {&check_board};
+    // struct console_command cmd_step   = {&step_board};
+    // struct console_command cmd_game   = {&command_game};
 
-	console_initialize();
-	console_add_command(CMD_TEST, &cmd_test);
-	console_add_command(CMD_PRINT, &cmd_print);
-	console_add_command(CMD_BUFFER, &cmd_buffer);
-	console_add_command(CMD_CHECK, &cmd_check);
-	console_add_command(CMD_STEP, &cmd_step);
-	console_add_command(CMD_STOP, &cmd_stop);
-	console_add_command(CMD_RUN, &cmd_run);
-	console_add_command(CMD_RESET, &cmd_reset);
+    console_initialize();
+    console_add_command(CMD_TEST, &cmd_test);
+    console_add_command(CMD_GAME, &cmd_game);
+    // console_add_command(CMD_PRINT, &cmd_print);
+    // console_add_command(CMD_BUFFER, &cmd_buffer);
+    // console_add_command(CMD_CHECK, &cmd_check);
+    // console_add_command(CMD_STEP, &cmd_step);
+    // console_add_command(CMD_RESET, &cmd_reset);
+    // console_add_command(CMD_GAME, &cmd_game);
 
 
     // Initialize interrupts
@@ -239,7 +299,7 @@ int32_t application_run()
         }
 
         if(reset_flag) {
-            reset_board();
+            reset_game(true);
             ssd1306_display(&display, game.board, (game.height * game.width));
             reset_flag = false;
         }

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 struct console_command {
-    uint32_t (*callback)();
+    uint32_t (*callback)(int32_t, char **);
 };
 
 void console_initialize();

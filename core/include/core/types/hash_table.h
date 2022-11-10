@@ -40,5 +40,6 @@ void *hash_table_get(struct hash_table *map, const char *key);
 void hash_table_resize(struct hash_table *map);
 unsigned long hash_table_djb2(const char *str);
 float hash_table_load_factor(struct hash_table *map);
+void hash_table_traverse(struct hash_table *map);
 
 #endif // CORE_HASH_TABLE_H
