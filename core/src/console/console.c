@@ -89,5 +89,10 @@ void console_run()
 
 void console_add_command(const char *key, struct console_command *container)
 {
-    hash_table_insert(&command_map, key, (void*)container);
+    bool success = hash_table_insert(&command_map, key, (void*)container);
+    if(success) {
+        LOG_INFO("%s command added\n", key);
+    } else {
+        LOG_WARN("%s command NOT added\n", key);
+    }
 }

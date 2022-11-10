@@ -35,7 +35,7 @@ static const float hash_table_load_factor_0_75 = 0.75;
 void hash_table_initialize(struct hash_table *map, uint32_t size);
 void hash_table_deinitialize(struct hash_table *map);
 
-void hash_table_insert(struct hash_table *map, const char *key, void *value);
+bool hash_table_insert(struct hash_table *map, const char *key, void *value);
 void *hash_table_get(struct hash_table *map, const char *key);
 void hash_table_resize(struct hash_table *map);
 unsigned long hash_table_djb2(const char *str);

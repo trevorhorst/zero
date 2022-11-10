@@ -47,10 +47,11 @@ void hash_table_deinitialize(struct hash_table *map)
     map->n = 0;
 }
 
-void hash_table_insert(struct hash_table *map, const char *key, void *value)
+bool hash_table_insert(struct hash_table *map, const char *key, void *value)
 {
+    bool success = false;
     unsigned long hash = hash_table_djb2(key);
-    printf("insert key %s (%lu)\n", key, hash);
+    LOG_DEBUG("insert key %s (%lu)\n", key, hash);
     unsigned int bucket = hash % map->k;
     if(map->buckets[bucket].value == NULL) {
         // This bucket is unoccupied so we can safely add the hash value
@@ -58,22 +59,24 @@ void hash_table_insert(struct hash_table *map, const char *key, void *value)
         map->buckets[bucket].hash = hash;
         map->buckets[bucket].value = value;
         map->n++;
+        success = true;
     } else {
-        printf("Hash map collision detected\n");
+        LOG_DEBUG("Hash map collision detected\n");
         struct hash_bucket *it = &map->buckets[bucket];
 
         if(it->hash == hash) {
-            printf("Duplicate 1 detected\n");
+            LOG_DEBUG("Duplicate 1 detected\n");
             it->key = key;
             it->hash = hash;
             it->value = value;
+            success = true;
         } else {
             char duplicate = 0;
 
             while(it->next) {
                 it = it->next;
                 if(it->hash == hash) {
-                    printf("Duplicate 2 detected\n");
+                    LOG_DEBUG("Duplicate 2 detected\n");
                     duplicate = 1;
                     break;
                 }
@@ -84,6 +87,7 @@ void hash_table_insert(struct hash_table *map, const char *key, void *value)
                 it->key = key;
                 it->hash = hash;
                 it->value = value;
+                success = true;
             } else {
                 // Item is new, create new entry for the linked list
                 struct hash_bucket *new_bucket = (struct hash_bucket*)malloc(sizeof(struct hash_bucket));
@@ -93,17 +97,20 @@ void hash_table_insert(struct hash_table *map, const char *key, void *value)
                 new_bucket->next = NULL;
                 it->next = new_bucket;
                 map->n++;
+                success = true;
             }
         }
     }
 
     float a = hash_table_load_factor(map);
-    printf("Load factor is %f\n", a);
+    LOG_DEBUG("Load factor is %f\n", a);
     if(a > map->a /*|| (a < (map->a / 4))*/) {
-        printf("Resizing map...\n");
+        LOG_DEBUG("Resizing map...\n");
         // hash_table_resize(map);
-        printf("Resizing complete.\n");
+        LOG_DEBUG("Resizing complete.\n");
     }
+
+    return success;
 }
 
 /**
@@ -117,7 +124,7 @@ void *hash_table_get(struct hash_table *map, const char *key)
 {
     void *value = NULL;
     unsigned long hash = hash_table_djb2(key);
-    printf("%s hash returns %lu\n", key, hash);
+    LOG_DEBUG("%s hash returns %lu\n", key, hash);
     unsigned int bucket = hash % map->k;
 
     struct hash_bucket *it = &map->buckets[bucket];
@@ -138,7 +145,7 @@ void hash_table_resize(struct hash_table *map)
     hash_table_initialize(&new_map, (map->k * 2));
 
     for(unsigned int i = 0; i < map->k; i++) {
-        printf("Bucket %d\n", i);
+        LOG_DEBUG("Bucket %d\n", i);
         struct hash_bucket *it = &map->buckets[i];
         while(it != NULL && (it->value != NULL)) {
             printf("  %lu\n", it->hash);

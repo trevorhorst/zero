@@ -52,17 +52,17 @@ uint32_t stop_game()
 
 uint32_t print_board()
 {
-    print_ram_board(&game);
+    conways_print_game_board(&game);
 }
 
 uint32_t print_buffer()
 {
-    print_ram_buffer(&game);
+    conways_print_game_buffer(&game);
 }
 
 uint32_t check_board()
 {
-    step_ram_board(&game, true);
+    conways_run_generation(&game, true);
 }
 
 uint32_t reset_board()
@@ -72,14 +72,14 @@ uint32_t reset_board()
 
 uint32_t step_board()
 {
-    print_ram_board(&game);
-    step_ram_board(&game, true);
+    conways_print_game_board(&game);
+    conways_run_generation(&game, true);
 
     uint8_t *temp = game.board;
     game.board = game.buffer;
     game.buffer = temp;
     ssd1306_display(&display, game.board, (game.height * game.width));
-    print_ram_board(&game);
+    conways_print_game_board(&game);
 }
 
 void application_initialize_spi()
@@ -91,7 +91,7 @@ void application_initialize_spi()
     gpio_set_function(PIN_SPI_MOSI, GPIO_FUNC_SPI);
 
     // Initialize the SPI port to 
-    spi_init(spi0, SPI_BUS_SPEED_KHZ(370*4));
+    spi_init(spi0, SPI_BUS_SPEED_KHZ(1000));
     spi_set_format(
         spi0,
         8,
@@ -99,6 +99,39 @@ void application_initialize_spi()
         SPI_CPHA_1,
         SPI_MSB_FIRST
     );
+}
+
+void application_initialize_seed()
+{
+    LOG_INFO("Initializing Seed...\n");
+    uint64_t seed = to_us_since_boot(get_absolute_time());
+    LOG_INFO("  Seed is %lu\n", seed);
+    // Initialize the random number generator
+    srand(seed);
+}
+
+void application_initialize_display()
+{
+    LOG_INFO("Initializing Display...\n");
+    display.bus   = spi0;
+    display.cs    = PIN_DISPLAY_CS;
+    display.dc    = PIN_DISPLAY_DC;
+    display.reset = PIN_DISPLAY_RES;
+    
+    ssd1306_initialize_device(&display);
+    ssd1306_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
+}
+
+void application_initialize_game()
+{
+    LOG_INFO("Initializing Game...\n");
+
+    // Since we are using vertical addressing, swap our height and width parameters
+    uint32_t image_width_bytes  = (OLED_HEIGHT % 8 == 0) ? (OLED_HEIGHT / 8) : ((OLED_HEIGHT / 8) + 1);
+    uint32_t image_height_bytes = OLED_WIDTH;
+
+    conways_initialize(&game, image_width_bytes, image_height_bytes);
+    ssd1306_display(&display, game.board, (game.height * game.width));
 }
 
 void gpio_callback(uint gpio, uint32_t events) {
@@ -139,6 +172,8 @@ int32_t application_run()
     // Give the console some time to get setup...
     sleep_ms(1000);
     
+    log_set_level(LOG_INFO);
+    
     // Initialize DC pin
     gpio_init(PIN_DISPLAY_DC);
     gpio_set_dir(PIN_DISPLAY_DC, GPIO_OUT);
@@ -154,53 +189,30 @@ int32_t application_run()
     gpio_set_dir(PIN_DISPLAY_RES, GPIO_OUT);
     gpio_put(PIN_DISPLAY_RES, 1);
 
-
     application_initialize_spi();
-    display.bus   = spi0;
-    display.cs    = PIN_DISPLAY_CS;
-    display.dc    = PIN_DISPLAY_DC;
-    display.reset = PIN_DISPLAY_RES;
-    
-    LOG_INFO("Initializing Seed...\n");
-    uint64_t seed = to_us_since_boot(get_absolute_time());
-    LOG_INFO("  Seed is %lu\n", seed);
-    // Initialize the random number generator
-    srand(seed);
+    application_initialize_seed();
+    application_initialize_display();
+    application_initialize_game();
 
-    LOG_INFO("Initializing Display...\n");
-    ssd1306_initialize_device(&display);
-    ssd1306_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
+	struct console_command cmd_test   = {&test_callback};
+	struct console_command cmd_print  = {&print_board};
+	struct console_command cmd_buffer = {&print_buffer};
+	struct console_command cmd_check  = {&check_board};
+	struct console_command cmd_step   = {&step_board};
+	struct console_command cmd_run    = {&run_game};
+	struct console_command cmd_stop   = {&stop_game};
+	struct console_command cmd_reset  = {&reset_board};
 
-    LOG_INFO("Initializing Game...\n");
+	console_initialize();
+	console_add_command(CMD_TEST, &cmd_test);
+	console_add_command(CMD_PRINT, &cmd_print);
+	console_add_command(CMD_BUFFER, &cmd_buffer);
+	console_add_command(CMD_CHECK, &cmd_check);
+	console_add_command(CMD_STEP, &cmd_step);
+	console_add_command(CMD_STOP, &cmd_stop);
+	console_add_command(CMD_RUN, &cmd_run);
+	console_add_command(CMD_RESET, &cmd_reset);
 
-    // Since we are using vertical addressing, swap our height and width parameters
-    // uint32_t image_width_bytes  = OLED_HEIGHT;
-    // uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
-    uint32_t image_width_bytes  = (OLED_HEIGHT % 8 == 0) ? (OLED_HEIGHT / 8) : ((OLED_HEIGHT / 8) + 1);
-    uint32_t image_height_bytes = OLED_WIDTH;
-
-    conways_initialize(&game, image_width_bytes, image_height_bytes);
-    ssd1306_display(&display, game.board, (game.height * game.width));
-    // print_ram_board(&game);
-    // step_ram_board(&game);
-
-    struct console_command cmd_test   = {&test_callback};
-    struct console_command cmd_print  = {&print_board};
-    struct console_command cmd_buffer = {&print_buffer};
-    struct console_command cmd_check  = {&check_board};
-    struct console_command cmd_step   = {&step_board};
-    struct console_command cmd_run    = {&run_game};
-    struct console_command cmd_stop   = {&stop_game};
-    struct console_command cmd_reset  = {&reset_board};
-    console_initialize();
-    console_add_command(CMD_TEST, &cmd_test);
-    console_add_command(CMD_PRINT, &cmd_print);
-    console_add_command(CMD_BUFFER, &cmd_buffer);
-    console_add_command(CMD_CHECK, &cmd_check);
-    console_add_command(CMD_STEP, &cmd_step);
-    console_add_command(CMD_STOP, &cmd_stop);
-    console_add_command(CMD_RUN, &cmd_run);
-    console_add_command(CMD_RESET, &cmd_reset);
 
     // Initialize interrupts
     gpio_set_irq_enabled_with_callback(PIN_GAME_RESET_BTN, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
@@ -209,6 +221,7 @@ int32_t application_run()
     LOG_INFO("Conways Version: %s\n", CONWAYS_VERSION);
     LOG_INFO(" Common Version: %s\n", CORE_VERSION);
 
+    // Run console interface on the second core
     multicore_launch_core1(console_run);
 
     uint8_t count = 0;
@@ -216,7 +229,7 @@ int32_t application_run()
         if(running && (game_speed != 5)) {
             uint32_t speed = 0x10 >> game_speed;
             if(count % speed == 0) {
-                step_ram_board(&game, false);
+                conways_run_generation(&game, false);
 
                 uint8_t *temp = game.board;
                 game.board = game.buffer;
@@ -235,6 +248,8 @@ int32_t application_run()
 
         sleep_ms(25);
     }
+
+    conways_deinitialize(&game);
 
     return 0;
 }
