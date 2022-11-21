@@ -13,4 +13,6 @@
  */
 int32_t param_to_bool(char *value, bool *result);
 
+int32_t param_to_number(char *value, double *result);
+
 #endif // CORE_COMMAND_H

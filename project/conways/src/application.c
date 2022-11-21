@@ -30,6 +30,7 @@
 #define CMD_STOP     "stop"
 #define CMD_RESET    "reset"
 #define CMD_GAME     "game"
+#define CMD_SPEED    "speed"
 
 typedef struct parameter_callback_t {
     int32_t (*callback)(char *value);
@@ -121,15 +122,29 @@ int32_t game_parameter_reset(char *value)
     return error;
 }
 
+int32_t game_parameter_speed(char *value)
+{
+    int32_t error = 0;
+    double speed = 0.;
+    if(param_to_number(value, &speed) >= 0) {
+        LOG_INFO("Game speed: %lf\n", speed);
+    } else {
+        error = -1;
+    }
+    return error;
+}
+
 uint32_t command_game(int32_t argc, char **argv)
 {
     struct hash_table game_params;
     param_callback param_run = {&game_parameter_run};
     param_callback param_reset = {&game_parameter_reset};
+    param_callback param_speed = {&game_parameter_speed};
 
     hash_table_initialize(&game_params, 10);
     hash_table_insert(&game_params, CMD_RUN, (void*)&param_run);
     hash_table_insert(&game_params, CMD_RESET, (void*)&param_reset);
+    hash_table_insert(&game_params, CMD_SPEED, (void*)&param_speed);
 
 
     for(int32_t i = 1; i < argc; i = i + 2) {
