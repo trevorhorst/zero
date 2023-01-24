@@ -18,8 +18,8 @@
 #define PIN_DISPLAY_CS  28
 
 
-#define PIN_INCREASE_CLOCK   6
-#define PIN_DECREASE_CLOCK   7
+#define PIN_INCREASE_CLOCK   7
+#define PIN_DECREASE_CLOCK   6
 
 #define BUS_SPEED_KHZ(x) x * 1000
 
