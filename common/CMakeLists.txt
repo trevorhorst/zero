@@ -41,6 +41,7 @@ set(HEADERS
     include/common/drivers/ssd1306.h
     include/common/drivers/ws2812.h
     include/common/json/cjson.h
+    include/common/hash_table.h
     include/common/types.h
     include/common/version.h
     )   
