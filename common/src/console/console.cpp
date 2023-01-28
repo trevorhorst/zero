@@ -101,8 +101,13 @@ void console_evaluate(char *input, const size_t &length)
         // char msgRsp[ 1024 ] = { 0 };
         char *msgRsp = new char[1024];
 
-        cmd_handler->process(msgStr, &msgRsp);
-        printf("%s\n", msgRsp);
+        if(cmd_handler) {
+            cmd_handler->process(msgStr, &msgRsp);
+        } else {
+            snprintf(msgRsp, 1024, "Invalid command handler");
+        }
+
+        LOG_INFO("%s\n", msgRsp);
         // if( console->client() ) {
         //     console->client()->send( msgStr, msgRsp, 1024 );
         //     cJSON *rsp = cJSON_Parse( msgRsp );

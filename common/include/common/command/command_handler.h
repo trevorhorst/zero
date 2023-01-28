@@ -28,4 +28,4 @@ private:
     Types::CharHashMap< Command* > mCommandMap;
 };
 
-#endif // FAWKES_COMMAND_HANDLER_H
+#endif // COMMON_COMMAND_HANDLER_H

@@ -1,10 +1,12 @@
 #include <math.h>
 
+#include "pico/multicore.h"
 #include "hardware/i2c.h"
 #include "hardware/spi.h"
 
-#include "common/logger.h"
+#include "common/console/console.h"
 #include "common/drivers/ssd1306.h"
+#include "common/logger.h"
 
 #include "project/application.h"
 #include "project/resources.h"
@@ -97,7 +99,7 @@ void initialize_spi(spi_inst_t *bus)
     );
 }
 
-void initialize_display()
+void initialize_display(ssd1306_spi_device *display)
 {
     // Initialize DC pin
     gpio_init(PIN_DISPLAY_DC);
@@ -114,7 +116,13 @@ void initialize_display()
     gpio_set_dir(PIN_DISPLAY_RES, GPIO_OUT);
     gpio_put(PIN_DISPLAY_RES, 1);
 
+    display->bus   = spi0;
+    display->cs    = PIN_DISPLAY_CS;
+    display->dc    = PIN_DISPLAY_DC;
+    display->reset = PIN_DISPLAY_RES;
 
+    LOG_INFO("Initializing Display...\n");
+    ssd1306_initialize_device(display);
 }
 
 float temperature_in_c(uint16_t temp)
@@ -149,6 +157,14 @@ float dewpoint_in_c(float temp, float rh)
     return (b * alpha) / (a - alpha);
 }
 
+float calculate_frostpoint_in_c(float temp, float dewpoint)
+{
+    float dewpoint_k = 273.15 + dewpoint;
+    float temp_k = 273.15 + temp;
+    float frostpoint_k = dewpoint_k - temp_k + 2671.02 / ((2954.61 / temp_k) + 2.193665 * log(temp_k) - 13.3448);
+    return frostpoint_k - 273.15;
+}
+
 void write_symbol_to_display(ssd1306_spi_device *display, const uint8_t val)
 {
     const char *symbol = getSymbol(val);
@@ -172,25 +188,17 @@ int32_t application_run()
 
     sleep_ms(1000);
 
+    ssd1306_spi_device display;
+
     initialize_i2c(i2c0);
     initialize_spi(spi0);
-    initialize_display();
+    initialize_display(&display);
 
-    ssd1306_spi_device display;
-    display.bus   = spi0;
-    display.cs    = PIN_DISPLAY_CS;
-    display.dc    = PIN_DISPLAY_DC;
-    display.reset = PIN_DISPLAY_RES;
-
-    LOG_INFO("Initializing Display...\n");
-    ssd1306_initialize_device(&display);
-    // ssd1306_set_ignore_ram(&display, true);
-    // sleep_ms(500);
-    // ssd1306_set_ignore_ram(&display, false);
-
-    // Print version info to screen, 
     LOG_INFO("Dewpoint Version: %s\n", DEWPOINT_VERSION);
     LOG_INFO("  Common Version: %s\n", COMMON_VERSION);
+
+    // Launch the console on the second core
+    multicore_launch_core1(&console_run);
 
     for(uint8_t i = 0; i < 8; i++) {
         write_string_to_display(&display, empty_line);
@@ -200,6 +208,7 @@ int32_t application_run()
     char relative_humidity_text[17];
     char dewpoint_text[17];
 
+    // Run the main thread
     while(true) {
         ssd1306_reset_cursor(&display);
 
@@ -227,9 +236,10 @@ int32_t application_run()
         write_string_to_display(&display, relative_humidity_text);
         write_string_to_display(&display, dewpoint_text);
 
-        printf("Read Temp %fC (%fF)  (0x%02X 0x%02X 0x%02X)\n", temp_c, temp_f, response[0], response[1], response[2]);
-        printf("Read RelH %f  (0x%02X 0x%02X 0x%02X)\n", rh, response[3], response[4], response[5]);
-        printf("Dew Point: %fC (%fF)\n", dp, c_to_f(dp));
+        // printf("Read Temp %fC (%fF)  (0x%02X 0x%02X 0x%02X)\n", temp_c, temp_f, response[0], response[1], response[2]);
+        // printf("Read RelH %f  (0x%02X 0x%02X 0x%02X)\n", rh, response[3], response[4], response[5]);
+        // printf("Dew Point: %fC (%fF)\n", dp, c_to_f(dp));
+
         sleep_ms(1000);
     }
 
