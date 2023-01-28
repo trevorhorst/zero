@@ -68,7 +68,6 @@ void ssd1306_write(SSD1306Dev* dev, uint8_t byte);
 void ssd1306_write_buffer(SSD1306Dev *dev, uint8_t *buffer, int32_t buffer_length);
 void ssd1306_fill_screen(SSD1306Dev *dev, uint8_t byte);
 void ssd1306_initialize_device(SSD1306Dev *dev);
-void ssd1306_ignore_ram(SSD1306Dev *dev, bool enable);
 void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast);
 void ssd1306_set_addressing(SSD1306Dev *dev, uint8_t mode);
 void ssd1306_reset_cursor(SSD1306Dev *dev);

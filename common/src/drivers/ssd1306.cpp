@@ -106,17 +106,6 @@ void ssd1306_initialize_device(SSD1306Dev *dev)
     ssd1306_write(dev, OLED_SET_DISP | 0x01); // turn display on
 }
 
-void ssd1306_ignore_ram(SSD1306Dev *dev, bool enable)
-{
-    if(enable) {
-        // Ignore RAM, all pixels on
-        ssd1306_write(dev, 0xA5);
-    } else {
-        // Follow RAM
-        ssd1306_write(dev, 0x7F);
-    }
-}
-
 void ssd1306_set_contrast(SSD1306Dev *dev, uint8_t contrast)
 {
     ssd1306_write(dev, OLED_SET_CONTRAST); // set contrast control
@@ -331,8 +320,6 @@ void ssd1306_set_addressing(ssd1306_spi_device *device, uint8_t mode)
     uint8_t init_addressing[2] = {OLED_SET_MEM_ADDR, mode};
     ssd1306_write(device, ssd1306_write_type::COMMAND, init_addressing, sizeof(init_addressing));
 }
-
-
 
 
 
