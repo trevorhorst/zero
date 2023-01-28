@@ -4,9 +4,9 @@
 #include "hardware/i2c.h"
 #include "hardware/spi.h"
 
-#include "common/console/console.h"
-#include "common/drivers/ssd1306.h"
-#include "common/logger.h"
+#include "core/console/console.h"
+#include "core/drivers/ssd1306.h"
+#include "core/logger.h"
 
 #include "project/application.h"
 #include "project/resources.h"
@@ -195,7 +195,7 @@ int32_t application_run()
     initialize_display(&display);
 
     LOG_INFO("Dewpoint Version: %s\n", DEWPOINT_VERSION);
-    LOG_INFO("  Common Version: %s\n", COMMON_VERSION);
+    LOG_INFO("  Common Version: %s\n", CORE_VERSION);
 
     // Launch the console on the second core
     multicore_launch_core1(&console_run);

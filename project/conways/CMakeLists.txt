@@ -2,15 +2,15 @@ cmake_minimum_required(VERSION 3.13)
 project(
     conways
     DESCRIPTION "Conways Project Library"
-    VERSION 0.1.0
+    VERSION 0.2.0
     LANGUAGES C CXX ASM
     )   
 
 # List of source files
 set( SOURCE
     ${SOURCE}
-    src/application.cpp
-    src/game.cpp
+    src/application.c
+    src/game.c
     )   
 
 # List of header files
@@ -31,7 +31,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE CONWAYS_VERSION="${PROJECT_VE
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
-        common
+        core
         pico_multicore
     )
 

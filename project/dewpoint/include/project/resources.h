@@ -6,8 +6,8 @@
 
 #define SYMBOL_LENGTH 5
 
-extern "C" char font_txt[];
-extern "C" const unsigned int font_txt_size;
+extern char font_txt[];
+extern const unsigned int font_txt_size;
 
 const char *getSymbol(char symbol);
 

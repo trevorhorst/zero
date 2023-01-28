@@ -20,7 +20,7 @@ endfunction()
 project(
     zero
     VERSION 0.0.1
-    LANGUAGES C CXX ASM
+    LANGUAGES C ASM
     DESCRIPTION "RP2040 Zero")
 
 if(DEFINED ENV{CONTROL_PROD})
@@ -47,5 +47,6 @@ message("Building ${CONTROL_PROJECT}")
 pico_sdk_init()
 
 add_subdirectory(app)
-add_subdirectory(common)
+# add_subdirectory(common)
+add_subdirectory(core)
 add_subdirectory(project/${CONTROL_PROJECT})

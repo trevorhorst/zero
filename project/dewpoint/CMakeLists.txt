@@ -2,16 +2,17 @@ cmake_minimum_required(VERSION 3.13)
 project(
     dewpoint
     DESCRIPTION "Dew Point Project Library"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C CXX ASM
 )
 
 set( SOURCE
     ${SOURCE}
-        src/application.cpp
-        src/resources.cpp
+        src/application.c
+        src/resources.c
         src/resources/font.txt.s
         )
+
 set( HEADERS
     ${HEADERS}
         include/project/application.h
@@ -32,7 +33,7 @@ target_compile_definitions(
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
-        common
+        core
         pico_multicore
         hardware_i2c
         hardware_spi
