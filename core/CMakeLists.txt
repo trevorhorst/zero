@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     core
     DESCRIPTION "RP2040 Core Library"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C CXX ASM
 )
 
@@ -11,6 +11,7 @@ set(SOURCE
     ${SOURCE}
     src/command/command.c
     src/console/console.c
+    src/drivers/sht3xdis.c
     src/drivers/ssd1306.c
     src/json/cjson.c
     src/logger.c
@@ -22,6 +23,7 @@ set(HEADERS
     ${HEADERS}
     include/core/command/command.h
     include/core/console/console.h
+    include/core/drivers/sht3xdis.h
     include/core/drivers/ssd1306.h
     include/core/json/cjson.h
     include/core/logger.h
