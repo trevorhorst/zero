@@ -1,7 +1,8 @@
 #include "core/drivers/sht3xdis.h"
 
 /**
- * @brief Calculate the CRC-8 checksum a received data from the chip
+ * @brief Calculate the CRC-8 checksum of received data from the chip. Data is 
+ *  always transmitted as 2 bytes of data followed by a checksum
  * 
  * @param bytes 
  * @param nbytes 
@@ -14,7 +15,7 @@ uint32_t calculate_checksum(uint8_t *bytes, uint32_t nbytes)
     uint32_t polynomial = 0x131;
 
     // Initialize CRC register to 0
-    uint32_t crc = 0;
+    uint32_t crc = 0xFF;
 
     for(uint32_t byte = 0; byte < nbytes; byte++)
     {
@@ -63,6 +64,7 @@ float sht3xdis_convert_raw_to_farenheit(uint16_t temp)
 sht3xdis_measurement sht3xdis_singleshot_measurement(sht3xdis_i2c_device *device, 
     enum sht3xdis_repeatability repeat, bool clock_stretch)
 {
+    // Build singleshot measurement command
     uint8_t command[2] = {0x00, 0x00};
     command[0] = clock_stretch ? 0x2C : 0x24;
     switch(repeat) {
@@ -76,11 +78,15 @@ sht3xdis_measurement sht3xdis_singleshot_measurement(sht3xdis_i2c_device *device
             command[1] = clock_stretch ? 0x10 : 0x16;
             break;
     }
+    
+    // Write command and read response. 2 bytes of temperature data + checksum,
+    // followed by 2 bytes of humidity data + checksum.
     sht3xdis_write(device, command, sizeof(command));
     sleep_ms(1000);
     uint8_t response[6];
     sht3xdis_read(device, response, sizeof(response));
-
+    
+    // Fill out raw measurment data
     sht3xdis_measurement measurement;
     measurement.raw_temperature         = (response[0] << 8) | response[1];
     measurement.raw_relative_humidity   = (response[3] << 8) | response[4];

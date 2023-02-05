@@ -13,6 +13,17 @@ typedef struct sht3xdis_i2c_device_t {
     uint8_t address;
 } sht3xdis_i2c_device;
 
+/// @note Will get around to using these eventually... - TWH 02/05/2023
+// typedef struct sht3xdis_raw_data_t {
+//     uint8_t buffer[2];
+//     uint8_t checksum;
+// } sht3xdis_raw_data;
+// 
+// typedef union sht3xdis_raw_buffer_t {
+//     sht3xdis_raw_data raw_data;
+//     uint8_t raw_buffer[3];
+// } sht3xdis_raw_buffer;
+
 typedef struct sht3xdis_measurement_t {
     int16_t raw_temperature;
     int16_t raw_relative_humidity;
