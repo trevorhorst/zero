@@ -8,6 +8,8 @@
 #include "core/drivers/sht3xdis.h"
 #include "core/drivers/ssd1306.h"
 #include "core/logger.h"
+#include "core/tools/i2c.h"
+#include "core/tools/weather.h"
 
 #include "project/application.h"
 #include "project/resources.h"
@@ -33,44 +35,6 @@ const char relative_humidity_line[]     = "RelH    : %.2f ";
 const char dewpoint_line[]              = "Dew P.  : %.2f ";
 const char frostpoint_line[]            = "Frost P.: %.2f ";
 
-bool i2c_reserved_addr(uint8_t addr)
-{   
-    return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
-}  
-
-void i2c_bus_scan(i2c_inst_t *bus)
-{
-    uint8_t rxdata = 0;
-
-    printf("\nI2C Bus Scan\n");
-    printf("   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
-
-    for (int addr = 0; addr < (1 << 7); ++addr) {
-        if (addr % 16 == 0) {
-            printf("%02x ", addr);
-        }
-
-        // Perform a 1-byte dummy read from the probe address. If a slave
-        // acknowledges this address, the function returns the number of bytes
-        // transferred. If the address byte is ignored, the function returns
-        // -1.
-
-        // Skip over any reserved addresses.
-        int ret;
-        uint8_t rxdata;
-        if(i2c_reserved_addr(addr)) {
-            ret = PICO_ERROR_GENERIC;
-        } else {
-            ret = i2c_read_blocking(bus, addr, &rxdata, 1, false);
-        }
-
-        printf(ret < 0 ? "." : "@");
-        printf(addr % 16 == 15 ? "\n" : "  ");
-    }
-    printf("Done.\n");
-}
-
-
 void initialize_i2c(i2c_inst_t *bus)
 {
     LOG_INFO("Initializing I2C...\n");
@@ -80,7 +44,7 @@ void initialize_i2c(i2c_inst_t *bus)
     gpio_pull_up(PIN_I2C1_SDA);
     gpio_pull_up(PIN_I2C1_SCL);
 
-    i2c_bus_scan(bus);
+    // tools_i2c_bus_scan(bus);
 }
 
 void initialize_spi(spi_inst_t *bus)
@@ -136,34 +100,6 @@ void initialize_ht_sensor(sht3xdis_i2c_device *sensor)
     sensor->bus     = i2c0;
 }
 
-float c_to_f(float temp)
-{
-    return ((9 * temp) / 5) + 32;
-}
-
-float relative_humidity(uint16_t rawrh)
-{
-    float rh = (100.0 * ((float)rawrh / 65535.));
-    return rh;
-}
-
-float dewpoint_in_c(float temp, float rh)
-{
-    float a = 17.27;
-    float b = 237.7;
-
-    float alpha = ((a * temp) / (b + temp)) + log(rh / 100.0);
-    return (b * alpha) / (a - alpha);
-}
-
-float calculate_frostpoint_in_c(float temp, float dewpoint)
-{
-    float dewpoint_k = 273.15 + dewpoint;
-    float temp_k = 273.15 + temp;
-    float frostpoint_k = dewpoint_k - temp_k + 2671.02 / ((2954.61 / temp_k) + 2.193665 * log(temp_k) - 13.3448);
-    return frostpoint_k - 273.15;
-}
-
 void write_symbol_to_display(ssd1306_spi_device *display, const uint8_t val)
 {
     const char *symbol = getSymbol(val);
@@ -183,7 +119,7 @@ void write_string_to_display(ssd1306_spi_device *display, const char *str )
 uint32_t test_i2c(int32_t argc, char **argv)
 {
     uint32_t error = 0;
-    i2c_bus_scan(i2c0);
+    tools_i2c_bus_scan(i2c0);
     return error;
 }
 
@@ -231,14 +167,14 @@ int32_t application_run()
 
         float temp_c = sht3xdis_convert_raw_to_celsius(measurement.raw_temperature);
         float temp_f = sht3xdis_convert_raw_to_farenheit(measurement.raw_temperature);
-        float rh     = relative_humidity(measurement.raw_relative_humidity);
-        float dp     = dewpoint_in_c(temp_c, rh);
-        float fp     = calculate_frostpoint_in_c(temp_c, dp);
+        float rh     = sht3xdis_convert_raw_to_relative_humidity(measurement.raw_relative_humidity);
+        float dp     = calculate_dew_point(temp_c, rh);
+        float fp     = calculate_frost_point(temp_c, dp);
 
         sprintf(temperature_text, temp_line, temp_f);
         sprintf(relative_humidity_text, relative_humidity_line, rh);
-        sprintf(dewpoint_text, dewpoint_line, c_to_f(dp));
-        sprintf(frostpoint_text, frostpoint_line, c_to_f(fp));
+        sprintf(dewpoint_text, dewpoint_line, convert_celsius_to_farenheit(dp));
+        sprintf(frostpoint_text, frostpoint_line, convert_celsius_to_farenheit(fp));
 
         write_string_to_display(&display, temperature_text);
         write_string_to_display(&display, relative_humidity_text);
