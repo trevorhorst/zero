@@ -15,6 +15,8 @@ set(SOURCE
     src/drivers/ssd1306.c
     src/json/cjson.c
     src/logger.c
+    src/tools/i2c.c
+    src/tools/weather.c
     src/types/hash_table.c
     )   
 
@@ -27,6 +29,8 @@ set(HEADERS
     include/core/drivers/ssd1306.h
     include/core/json/cjson.h
     include/core/logger.h
+    include/core/tools/i2c.h
+    include/core/tools/weather.h
     include/core/types/hash_table.h
     include/core/version.h
     )   

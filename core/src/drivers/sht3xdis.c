@@ -42,6 +42,12 @@ void sht3xdis_read(sht3xdis_i2c_device *device, uint8_t *buffer, uint32_t buffer
     i2c_read_blocking(device->bus, device->address, buffer, buffer_length, false);
 }
 
+float sht3xdis_convert_raw_to_relative_humidity(uint16_t rawrh)
+{
+    float rh = (100. * ((float)rawrh / 65535.));
+    return rh;
+}
+
 float sht3xdis_convert_raw_to_celsius(uint16_t temp)
 {
     float temperature = -45. + (175. * ((float)temp / 65535.));

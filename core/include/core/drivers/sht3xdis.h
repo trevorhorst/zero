@@ -26,6 +26,7 @@ enum sht3xdis_repeatability {
 
 void sht3xdis_write(sht3xdis_i2c_device *device, uint8_t *buffer, uint32_t buffer_length);
 void sht3xdis_read(sht3xdis_i2c_device *device, uint8_t *buffer, uint32_t buffer_length);
+float sht3xdis_convert_raw_to_relative_humidity(uint16_t rawrh);
 float sht3xdis_convert_raw_to_celsius(uint16_t temp);
 float sht3xdis_convert_raw_to_farenheit(uint16_t temp);
 sht3xdis_measurement sht3xdis_singleshot_measurement(sht3xdis_i2c_device *device, 
