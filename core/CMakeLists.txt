@@ -11,6 +11,7 @@ set(SOURCE
     ${SOURCE}
     src/command/command.c
     src/console/console.c
+    src/drivers/at24c.c
     src/drivers/sht3xdis.c
     src/drivers/ssd1306.c
     src/json/cjson.c
@@ -25,6 +26,7 @@ set(HEADERS
     ${HEADERS}
     include/core/command/command.h
     include/core/console/console.h
+    include/core/drivers/at24c.h
     include/core/drivers/sht3xdis.h
     include/core/drivers/ssd1306.h
     include/core/json/cjson.h
