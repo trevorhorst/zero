@@ -84,7 +84,30 @@ uint32_t eeprom_operation(int32_t argc, char **argv)
             LOG_INFO("0x%02X <-- 0x%02X\n", address, data);
         }
 
+        if(strncmp(CMD_D32, argv[1], 128) == 0) {
+            // We are performing a read operation
+            long address = strtol(argv[2], NULL, 16);
+            if(errno == ERANGE) {
+                return 1;
+            }
+
+            long length = strtol(argv[4], NULL, 16);
+            if(errno == ERANGE) {
+                return 1;
+            }
+
+            uint8_t *buffer = (uint8_t*)malloc(sizeof(uint8_t) * length);
+            at24cxxx_random_read(&eeprom, address, buffer, length);
+            
+            for(int32_t i = 0; i < length; i++) {
+                LOG_INFO("0x%02X --> 0x%02X\n", address + i, buffer[i]);
+            }
+
+            free(buffer);
+        }
+
     }
+
     return error;
 }
 
