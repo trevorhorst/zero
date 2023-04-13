@@ -21,6 +21,7 @@
 #define CMD_R32     "r32"
 #define CMD_W32     "w32"
 #define CMD_D32     "d32"
+#define CMD_DISPLAY "display"
 
 ssd1306_i2c_device display;
 at24cxxx_i2c_device eeprom;
@@ -44,7 +45,10 @@ void initialize_display(ssd1306_i2c_device *device)
     device->bus     = i2c0;
     
     ssd1306_i2c_initialize_device(&display);
-    // ssd1306_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
+    // ssd1306_i2c_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
+
+    int8_t buffer[] = {OLED_I2C_CONTROL_BYTE(0, 1), 0x7C, 0x12, 0x11, 0x12, 0x7C, 0x00, 0x00, 0x00 };
+    ssd1306_i2c_write(&display, buffer, sizeof(buffer));
 }
 
 void initialize_eeprom(at24cxxx_i2c_device *device)
@@ -123,6 +127,17 @@ uint32_t eeprom_operation(int32_t argc, char **argv)
     return error;
 }
 
+uint32_t display_operation(int32_t argc, char **argv)
+{
+    uint8_t buffer[256] = {0, 0, 0, 0, 0};
+    ssd1306_i2c_read(&display, buffer, sizeof(buffer));
+    for(int32_t i = 0; i < sizeof(buffer); i++) {
+        printf("0x%02X\n", buffer[i]);
+    }
+
+     return 0;
+}
+
 int32_t application_run()
 {
     int32_t success = 0;
@@ -137,10 +152,12 @@ int32_t application_run()
 
     struct console_command cmd_i2c = {&i2c_scan};
     struct console_command cmd_eeprom = {&eeprom_operation};
+    struct console_command cmd_display = {&display_operation};
 
     console_initialize();
     console_add_command(CMD_I2C, &cmd_i2c);
     console_add_command(CMD_EEPROM, &cmd_eeprom);
+    console_add_command(CMD_DISPLAY, &cmd_display);
     multicore_launch_core1(&console_run);
 
     LOG_INFO("Devices Version: %s\n", DEVICES_VERSION);

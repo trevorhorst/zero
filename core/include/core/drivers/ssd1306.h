@@ -67,12 +67,17 @@ enum ssd1306_write_type {
 };
 
 int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length);
+int32_t ssd1306_i2c_read(ssd1306_i2c_device *device, uint8_t *buffer, uint32_t buffer_length);
 // int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, enum ssd1306_write_type type, const uint8_t *buffer, uint32_t buffer_length);
 int32_t ssd1306_i2c_initialize_device(ssd1306_i2c_device *dev);
 void ssd1306_i2c_set_display_enable(ssd1306_i2c_device *device, bool enable);
 void ssd1306_i2c_set_ignore_ram(ssd1306_i2c_device *device, bool enable);
 void ssd1306_i2c_set_invert_display(ssd1306_i2c_device *device, bool invert);
 void ssd1306_i2c_set_contrast(ssd1306_i2c_device *device, uint8_t contrast);
+void ssd1306_i2c_set_addressing(ssd1306_i2c_device *device, uint8_t contrast);
+void ssd1306_i2c_set_cursor(ssd1306_i2c_device *device, uint8_t start_col, uint8_t end_col, uint8_t start_page, uint8_t end_page);
+void ssd1306_i2c_reset_cursor(ssd1306_i2c_device *device);
+void ssd1306_i2c_clear_display(ssd1306_i2c_device *device);
 
 /**
  * @brief Performs a write to the SSD1306
