@@ -14,7 +14,8 @@ int32_t at24cxxx_byte_read(at24cxxx_i2c_device *device, uint8_t *buffer, uint32_
     return i2c_read_blocking(device->bus, device->address, buffer, buffer_length, false);
 }
 
-int32_t at24cxxx_random_read(at24cxxx_i2c_device *device, uint16_t address, uint8_t *buffer, uint32_t buffer_length)
+int32_t at24cxxx_random_read(
+    at24cxxx_i2c_device *device, uint16_t address, uint8_t *buffer, uint32_t buffer_length)
 {
     uint8_t address_buffer[2] = {((address >> 8) & 0xFF), ((address >> 0) & 0xFF)};
     i2c_write_blocking(device->bus, device->address, address_buffer, sizeof(address_buffer), false);

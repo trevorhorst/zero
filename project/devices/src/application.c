@@ -2,6 +2,7 @@
 
 #include "core/console/console.h"
 #include "core/drivers/at24c.h"
+#include "core/drivers/ssd1306.h"
 #include "core/logger.h"
 #include "core/tools/i2c.h"
 
@@ -21,6 +22,7 @@
 #define CMD_W32     "w32"
 #define CMD_D32     "d32"
 
+ssd1306_i2c_device display;
 at24cxxx_i2c_device eeprom;
 
 void initialize_i2c(i2c_inst_t *bus)
@@ -33,6 +35,16 @@ void initialize_i2c(i2c_inst_t *bus)
     gpio_pull_up(PIN_I2C1_SCL);
 
     // tools_i2c_bus_scan(bus);
+}
+
+void initialize_display(ssd1306_i2c_device *device)
+{
+    LOG_INFO("Initializing Display...\n");
+    device->address = 0x3C;
+    device->bus     = i2c0;
+    
+    ssd1306_i2c_initialize_device(&display);
+    // ssd1306_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
 }
 
 void initialize_eeprom(at24cxxx_i2c_device *device)
@@ -120,6 +132,7 @@ int32_t application_run()
     sleep_ms(1000);
 
     initialize_i2c(i2c0);
+    initialize_display(&display);
     initialize_eeprom(&eeprom);
 
     struct console_command cmd_i2c = {&i2c_scan};

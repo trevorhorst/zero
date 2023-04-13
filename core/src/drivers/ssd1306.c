@@ -1,5 +1,137 @@
 #include "core/drivers/ssd1306.h"
 
+int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length)
+{
+    return i2c_write_blocking(device->bus, device->address, buffer, buffer_length, false);
+}
+
+// int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, enum ssd1306_write_type type, const uint8_t *buffer, uint32_t buffer_length)
+// {
+//     switch(type) {
+//     case SSD1306_WRITE_COMMAND:
+//         break;
+//     case SSD1306_WRITE_DATA:
+//         break;
+//     default:
+//         break;
+//     }
+// 
+// 
+// }
+
+int32_t ssd1306_i2c_initialize_device(ssd1306_i2c_device *device)
+{
+    ssd1306_i2c_set_display_enable(device, false);
+
+    /* timing and driving scheme */
+    uint8_t init2[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_DISP_CLK_DIV, 0x80}; // Set display clock divide ratio, div ratio of 1, standard freq
+    ssd1306_i2c_write(device, init2, sizeof(init2)); // div ratio of 1, standard freq
+
+    uint8_t init3[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_MUX_RATIO, (OLED_HEIGHT - 1)}; // Set multiplex ratio, display is only 32 pixels high
+    ssd1306_i2c_write(device, init3, sizeof(init3)); // our display is only 32 pixels high
+
+    // Set display offset, no offset
+    uint8_t init4[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_DISP_OFFSET, 0x00};
+    ssd1306_i2c_write(device, init4, sizeof(init4));
+
+    /* resolution and layout */
+    // Set display start line to 0
+    uint8_t init5[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_DISP_START_LINE};
+    ssd1306_i2c_write(device, init5, sizeof(init5)); // set display start line to 0
+
+    // Set charge pump, vcc internally generated
+    uint8_t init6[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_CHARGE_PUMP, 0x14};
+    ssd1306_i2c_write(device, init6, sizeof(init6));
+
+    /* memory mapping */
+    // Set memory address mode, horizontal addressing
+    uint8_t init7[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_MEM_ADDR, 0x00};
+    ssd1306_i2c_write(device, init7, sizeof(init7));
+
+    uint8_t init8[] = {OLED_I2C_CONTROL_BYTE(0, 0), (OLED_SET_SEG_REMAP | 0x1)};
+    ssd1306_i2c_write(device, init8, sizeof(init8)); // set segment re-map
+    // column address 127 is mapped to SEG0
+
+    uint8_t init9[] = {OLED_I2C_CONTROL_BYTE(0, 0), (OLED_SET_COM_OUT_DIR | 0x8)};
+    ssd1306_i2c_write(device, init9, sizeof(init9)); // set COM (common) output scan direction
+
+    uint8_t init10[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_COM_PIN_CFG, 0x12}; // Set COM (common) pins hardware config, manufacturer magic number
+    ssd1306_i2c_write(device, init10, sizeof(init10));
+
+    /* display */
+    // Set contrast control
+    ssd1306_i2c_set_contrast(device, 0x01);
+
+    uint8_t init12[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_PRECHARGE, 0xF1};
+    ssd1306_i2c_write(device, init12, sizeof(init12));
+
+    uint8_t init13[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_VCOM_DESEL, 0x40};
+    ssd1306_i2c_write(device, init13, sizeof(init13));
+
+    // set entire display on to follow RAM content
+    ssd1306_i2c_set_ignore_ram(device, false);
+
+    // Set normal (not inverted) display
+    ssd1306_i2c_set_invert_display(device, false);
+
+    ssd1306_i2c_set_display_enable(device, true);
+
+    return 0;
+}
+
+void ssd1306_i2c_set_display_enable(ssd1306_i2c_device *device, bool enable)
+{
+    uint8_t command[2] = {0x3C, OLED_SET_DISP};
+    if(enable) {
+        // Enable display 0xAF
+        command[1] |= 0x01;
+    }
+    ssd1306_i2c_write(device, command, sizeof(command));
+}
+
+void ssd1306_i2c_set_ignore_ram(ssd1306_i2c_device *device, bool enable)
+{
+    uint8_t command[2] = {0x3C, OLED_SET_ENTIRE_ON};
+    if(enable) {
+        // Ignore RAM, all pixels on 0xA5
+        command[1] |= 0x01;
+    }
+    ssd1306_i2c_write(device, command, sizeof(command));
+}
+
+void ssd1306_i2c_set_invert_display(ssd1306_i2c_device *device, bool invert)
+{
+    uint8_t command[2] = {0x3C, OLED_SET_NORM_INV};
+    if(invert) {
+        // Invert the display (0 = ON, 1 = OFF), all pixels on 0xA5
+        command[1] |= 0x01;
+    }
+    ssd1306_i2c_write(device, command, sizeof(command));
+}
+
+void ssd1306_i2c_set_contrast(ssd1306_i2c_device *device, uint8_t contrast)
+{
+    // Contrast is a 2 byte command
+    uint8_t command[3] = {0x3C, OLED_SET_CONTRAST, contrast};
+    ssd1306_i2c_write(device, command, sizeof(command));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void ssd1306_write(ssd1306_spi_device *device, enum ssd1306_write_type type, const uint8_t *buffer,
                    uint32_t buffer_length)
 {

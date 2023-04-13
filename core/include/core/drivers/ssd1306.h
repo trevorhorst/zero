@@ -41,14 +41,16 @@
 #define OLED_WRITE_MODE _u(0xFE)
 #define OLED_READ_MODE _u(0xFF)
 
+#define OLED_I2C_CONTROL_BYTE(CO, DC)   (((CO & 0xF) << 7) | ((DC & 0xF) << 6))
+
 #define SSD1306_ADDRESSING_PAGE         0x2
 #define SSD1306_ADDRESSING_VERTICAL     0x1
 #define SSD1306_ADDRESSING_HORIZONTAL   0x0
 
-typedef struct ssd1306_device {
+typedef struct ssd1306_i2c_device_t {
     i2c_inst_t *bus;
     uint8_t address;
-} SSD1306Dev;
+} ssd1306_i2c_device;
 
 typedef struct ssd1306_spi_device_t {
     spi_inst_t *bus;
@@ -63,6 +65,14 @@ enum ssd1306_write_type {
     SSD1306_WRITE_COMMAND = 0,
     SSD1306_WRITE_DATA    = 1
 };
+
+int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length);
+// int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, enum ssd1306_write_type type, const uint8_t *buffer, uint32_t buffer_length);
+int32_t ssd1306_i2c_initialize_device(ssd1306_i2c_device *dev);
+void ssd1306_i2c_set_display_enable(ssd1306_i2c_device *device, bool enable);
+void ssd1306_i2c_set_ignore_ram(ssd1306_i2c_device *device, bool enable);
+void ssd1306_i2c_set_invert_display(ssd1306_i2c_device *device, bool invert);
+void ssd1306_i2c_set_contrast(ssd1306_i2c_device *device, uint8_t contrast);
 
 /**
  * @brief Performs a write to the SSD1306
