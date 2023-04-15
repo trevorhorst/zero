@@ -32,11 +32,8 @@ int32_t adxl345_i2c_get_data(adxl345_i2c_device *device, adxl345_data *data)
     
     if(data) {
         int32_t r = adxl345_i2c_read(device, ADXL345_REG_DATAX0, data->value, sizeof(data->value));
-        if(r == sizeof(data->value)) {
-            LOG_INFO("X: 0x%02X%02X Y: 0x%02X%02X Z: 0x%02X%02X\n", 
-                data->value[1], data->value[0], data->value[3], data->value[2], data->value[5], data->value[4]);
-        } else {
-            LOG_INFO("Read Unsuccessful\n");
+        if(r != sizeof(data->value)) {
+            LOG_ERROR("Read unsuccessful\n");
         }
     } else {
         error = -1;

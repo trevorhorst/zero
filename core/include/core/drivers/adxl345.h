@@ -52,9 +52,9 @@ typedef union adxl345_power_ctl_t {
 
 typedef union adxl345_data_t {
     struct {
-        uint8_t datax[2];
-        uint8_t datay[2];
-        uint8_t dataz[2];
+        int16_t datax;
+        int16_t datay;
+        int16_t dataz;
     } f;
     uint8_t value[6];
 } adxl345_data;
@@ -66,6 +66,7 @@ typedef union adxl345_data_t {
 
 int32_t adxl345_i2c_write_byte(adxl345_i2c_device *device, uint8_t address, uint8_t byte);
 int32_t adxl345_i2c_read(adxl345_i2c_device *device, uint8_t address, uint8_t *buffer, uint32_t buffer_length);
+
 int32_t adxl345_i2c_set_data_format(adxl345_i2c_device *device, adxl345_data_format *value);
 int32_t adxl345_i2c_set_power_ctl(adxl345_i2c_device *device, const adxl345_power_ctl *value);
 

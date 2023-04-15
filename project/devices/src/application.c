@@ -168,6 +168,8 @@ uint32_t accelerometer_operation(int32_t argc, char **argv)
     // adxl345_i2c_get_thresh_tap(&accelerometer);
     adxl345_data data;
     adxl345_i2c_get_data(&accelerometer, &data);
+    printf("X: %d   Y: %d   Z: %d\n", data.f.datax, data.f.datay, data.f.dataz);
+
     // LOG_INFO("DEVID: 0x%02X\n", devid);
 }
 
