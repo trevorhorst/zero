@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "core/console/console.h"
+#include "core/drivers/adxl345.h"
 #include "core/drivers/at24c.h"
 #include "core/drivers/ssd1306.h"
 #include "core/logger.h"
@@ -22,7 +23,9 @@
 #define CMD_W32     "w32"
 #define CMD_D32     "d32"
 #define CMD_DISPLAY "display"
+#define CMD_DATA    "data"
 
+adxl345_i2c_device accelerometer;
 ssd1306_i2c_device display;
 at24cxxx_i2c_device eeprom;
 
@@ -36,6 +39,25 @@ void initialize_i2c(i2c_inst_t *bus)
     gpio_pull_up(PIN_I2C1_SCL);
 
     // tools_i2c_bus_scan(bus);
+}
+
+void initialize_accelerometer(adxl345_i2c_device *device)
+{
+    LOG_INFO("Initializing Accelerometer...\n");
+    device->address = ADXL345_I2C_ADDRESS(0);
+    device->bus     = i2c0;
+
+    uint8_t devid = 0;
+    adxl345_i2c_read(device, ADXL345_REG_DEVID, &devid, sizeof(devid));
+    LOG_INFO("  Accelerometer (0x%02X) @ 0x%02X\n", devid, device->address);
+
+    adxl345_power_ctl ctl = {.value = 0};
+    ctl.f.measure = 1;
+    adxl345_i2c_set_power_ctl(device, &ctl);
+
+    adxl345_data_format fmt = {.value = 0};
+    fmt.f.range = ADXL345_RANGE_16G;
+    adxl345_i2c_set_data_format(device, &fmt);
 }
 
 void initialize_display(ssd1306_i2c_device *device)
@@ -138,6 +160,17 @@ uint32_t display_operation(int32_t argc, char **argv)
      return 0;
 }
 
+uint32_t accelerometer_operation(int32_t argc, char **argv)
+{
+    // uint8_t devid = 0;
+    // adxl345_i2c_read(&accelerometer, ADXL345_REG_DEVID, &devid, sizeof(devid));
+    // LOG_INFO("DEVID: 0x%02X\n", devid);
+    // adxl345_i2c_get_thresh_tap(&accelerometer);
+    adxl345_data data;
+    adxl345_i2c_get_data(&accelerometer, &data);
+    // LOG_INFO("DEVID: 0x%02X\n", devid);
+}
+
 int32_t application_run()
 {
     int32_t success = 0;
@@ -147,24 +180,28 @@ int32_t application_run()
     sleep_ms(1000);
 
     initialize_i2c(i2c0);
+    initialize_accelerometer(&accelerometer);
     initialize_display(&display);
     initialize_eeprom(&eeprom);
 
     struct console_command cmd_i2c = {&i2c_scan};
     struct console_command cmd_eeprom = {&eeprom_operation};
     struct console_command cmd_display = {&display_operation};
+    struct console_command cmd_accelerometer = {&accelerometer_operation};
 
     console_initialize();
     console_add_command(CMD_I2C, &cmd_i2c);
     console_add_command(CMD_EEPROM, &cmd_eeprom);
     console_add_command(CMD_DISPLAY, &cmd_display);
+    console_add_command(CMD_DATA, &cmd_accelerometer);
     multicore_launch_core1(&console_run);
 
     LOG_INFO("Devices Version: %s\n", DEVICES_VERSION);
     LOG_INFO(" Common Version: %s\n", CORE_VERSION);
 
     while(true) {
-
+        sleep_ms(500);
+        accelerometer_operation(0, NULL);
     }
 
     return success;
