@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     core
     DESCRIPTION "RP2040 Core Library"
-    VERSION 0.3.1
+    VERSION 0.4.0
     LANGUAGES C CXX ASM
 )
 
@@ -11,6 +11,8 @@ set(SOURCE
     ${SOURCE}
     src/command/command.c
     src/console/console.c
+    src/draw/bmpspritesheet.c
+    src/draw/canvas.c
     src/drivers/adxl345.c
     src/drivers/at24c.c
     src/drivers/sht3xdis.c
@@ -27,6 +29,8 @@ set(HEADERS
     ${HEADERS}
     include/core/command/command.h
     include/core/console/console.h
+    include/core/draw/bmpspritesheet.h
+    include/core/draw/canvas.h
     include/core/drivers/adxl345.h
     include/core/drivers/at24c.h
     include/core/drivers/sht3xdis.h

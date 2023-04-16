@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "core/console/console.h"
+#include "core/draw/canvas.h"
 #include "core/drivers/adxl345.h"
 #include "core/drivers/at24c.h"
 #include "core/drivers/ssd1306.h"
@@ -25,6 +26,9 @@
 #define CMD_DISPLAY "display"
 #define CMD_DATA    "data"
 
+uint32_t image_width_bytes  = OLED_HEIGHT;
+uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
+
 adxl345_i2c_device accelerometer;
 ssd1306_i2c_device display;
 at24cxxx_i2c_device eeprom;
@@ -32,7 +36,7 @@ at24cxxx_i2c_device eeprom;
 void initialize_i2c(i2c_inst_t *bus)
 {
     LOG_INFO("Initializing I2C...\n");
-    i2c_init(bus, BUS_SPEED_KHZ(100));
+    i2c_init(bus, BUS_SPEED_KHZ(400));
     gpio_set_function(PIN_I2C1_SDA, GPIO_FUNC_I2C);
     gpio_set_function(PIN_I2C1_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(PIN_I2C1_SDA);
@@ -67,10 +71,13 @@ void initialize_display(ssd1306_i2c_device *device)
     device->bus     = i2c0;
     
     ssd1306_i2c_initialize_device(&display);
+    ssd1306_i2c_reset_cursor(&display);
+    // ssd1306_display(&display, canvas.image, buffer_length);
+    ssd1306_i2c_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
     // ssd1306_i2c_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
 
-    int8_t buffer[] = {OLED_I2C_CONTROL_BYTE(0, 1), 0x7C, 0x12, 0x11, 0x12, 0x7C, 0x00, 0x00, 0x00 };
-    ssd1306_i2c_write(&display, buffer, sizeof(buffer));
+    // int8_t buffer[] = {OLED_I2C_CONTROL_BYTE(0, 1), 0x7C, 0x12, 0x11, 0x12, 0x7C, 0x00, 0x00, 0x00 };
+    // ssd1306_i2c_write(&display, buffer, sizeof(buffer));
 }
 
 void initialize_eeprom(at24cxxx_i2c_device *device)
@@ -173,6 +180,10 @@ uint32_t accelerometer_operation(int32_t argc, char **argv)
     // LOG_INFO("DEVID: 0x%02X\n", devid);
 }
 
+uint32_t draw()
+{
+}
+
 int32_t application_run()
 {
     int32_t success = 0;
@@ -181,10 +192,32 @@ int32_t application_run()
 
     sleep_ms(1000);
 
+    Canvas canvas;
+    uint32_t canvas_buffer_length = (image_height_bytes * image_width_bytes + 1);
+    uint8_t *canvas_buffer = (uint8_t *)malloc(canvas_buffer_length);
+    canvas.mirror = CANVAS_MIRROR_NONE;
+    canvas.rotate = CANVAS_ROTATE_0;
+    canvas.height = OLED_WIDTH;
+    canvas.width  = OLED_HEIGHT;
+    canvas.image = &canvas_buffer[1];
+
     initialize_i2c(i2c0);
     initialize_accelerometer(&accelerometer);
     initialize_display(&display);
     initialize_eeprom(&eeprom);
+
+    canvas_buffer[0] = OLED_I2C_CONTROL_BYTE(0, 1);
+    canvas_fill(&canvas, 0x00);
+
+
+    uint32_t center_x = OLED_HEIGHT / 2;
+    uint32_t center_y = OLED_WIDTH / 2;
+
+    uint32_t x = center_x - 2;
+    uint32_t y = center_y - 2;
+
+    canvas_draw_point(&canvas, x, y, CC_WHITE, PIXEL_4X4);
+    ssd1306_i2c_write(&display, canvas_buffer, canvas_buffer_length);
 
     struct console_command cmd_i2c = {&i2c_scan};
     struct console_command cmd_eeprom = {&eeprom_operation};
@@ -201,10 +234,37 @@ int32_t application_run()
     LOG_INFO("Devices Version: %s\n", DEVICES_VERSION);
     LOG_INFO(" Common Version: %s\n", CORE_VERSION);
 
+    int32_t x_range  = 28;
+    int32_t y_range  = 60;
+
     while(true) {
-        sleep_ms(500);
-        accelerometer_operation(0, NULL);
+        // Clear previous point
+        canvas_draw_point(&canvas, x, y, CC_BLACK, PIXEL_4X4);
+
+        // sleep_ms(10);
+        adxl345_data data;
+        adxl345_i2c_get_data(&accelerometer, &data);
+        printf("X: %d   Y: %d   Z: %d\n", data.f.datax, data.f.datay, data.f.dataz);
+
+        x = center_x - data.f.datay;
+        if(data.f.datay >= x_range) {
+            x = center_x - x_range;
+        } else if(data.f.datay <= (0 - x_range)) {
+            x = center_x + x_range;
+        }
+
+        y = center_y + (data.f.datax * 2);
+        if(data.f.datay >= y_range) {
+            y = center_y + y_range;
+        } else if(data.f.datay <= (0 - y_range)) {
+            y = center_y - y_range;
+        }
+
+        canvas_draw_point(&canvas, x, y, CC_WHITE, PIXEL_4X4);
+        ssd1306_i2c_write(&display, canvas_buffer, canvas_buffer_length);
     }
+
+    free(canvas.image);
 
     return success;
 }
