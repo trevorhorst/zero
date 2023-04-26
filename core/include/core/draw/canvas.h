@@ -52,7 +52,13 @@ void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
                        CanvasColor color, uint8_t size);
 
 void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start, 
-                      uint32_t x_end, uint32_t y_end);
+                      uint32_t x_end, uint32_t y_end, CanvasColor color);
+
+void canvas_draw_rectangle(Canvas *canvas, uint32_t Xstart, uint32_t Ystart, uint32_t Xend, uint32_t Yend,
+                         CanvasColor color /*, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill*/);
+
+void canvas_draw_circle(Canvas *canvas, uint32_t x_center, uint32_t y_center, uint32_t radius,
+                      CanvasColor color /*, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill*/);
 
 void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite,
                             uint32_t offset_x, uint32_t offset_y);

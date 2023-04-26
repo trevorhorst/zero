@@ -129,10 +129,127 @@ void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
 }
 
 void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start, 
-                      uint32_t x_end, uint32_t y_end)
+                      uint32_t x_end, uint32_t y_end, CanvasColor color)
 {
+    uint16_t x_point = x_start;
+    uint16_t y_point = y_start;
     int dx = (int)x_end - (int)x_start >= 0 ? x_end - x_start : x_start - x_end;
     int dy = (int)y_end - (int)y_start <= 0 ? y_end - y_start : y_start - y_end;
+
+    // Increment direction, 1 is positive, -1 is counter;
+    int x_addway = x_start < x_end ? 1 : -1;
+    int y_addway = y_start < y_end ? 1 : -1;
+
+    //Cumulative error
+    int esp = dx + dy;
+    char dotted_len = 0;
+
+    for(;;) {
+        // dotted_len++;
+        // //Painted dotted line, 2 point is really virtual
+        // if (Line_Style == LINE_STYLE_DOTTED && dotted_len % 3 == 0) {
+        //     //LOG_INFO("LINE_DOTTED\r\n");
+        //     Paint_DrawPoint(Xpoint, Ypoint, IMAGE_BACKGROUND, Line_width, DOT_STYLE_DFT);
+        //     dotted_len = 0;
+        // } else {
+            // Paint_DrawPoint(x_point, y_point, CC_BLACK, Line_width, DOT_STYLE_DFT);
+            canvas_draw_point(canvas, x_point, y_point, color, PIXEL_1X1);
+        // }
+        if (2 * esp >= dy) {
+            if (x_point == x_end)
+                break;
+            esp += dy;
+            x_point += x_addway;
+        }
+        if(2 * esp <= dx) {
+            if(y_point == y_end) {
+                break;
+            }
+            esp += dx;
+            y_point += y_addway;
+        }
+    }
+}
+
+void canvas_draw_rectangle(Canvas *canvas, uint32_t x_start, uint32_t y_start, uint32_t x_end, uint32_t y_end,
+                         CanvasColor color /*, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill*/)
+{
+   if (x_start > canvas->width || y_start > canvas->height ||
+        x_end > canvas->width || y_end > canvas->height) {
+        // LOG_INFO("Input exceeds the normal display range\r\n");
+        return;
+    }
+
+    // if (Draw_Fill) {
+    //     UWORD Ypoint;
+    //     for(Ypoint = Ystart; Ypoint < Yend; Ypoint++) {
+    //         Paint_DrawLine(Xstart, Ypoint, Xend, Ypoint, Color , Line_width, LINE_STYLE_SOLID);
+    //     }
+    // } else {
+        canvas_draw_line(canvas, x_start, y_start, x_end, y_start, color/*, Line_width, LINE_STy_LE_SOLID*/);
+        canvas_draw_line(canvas, x_start, y_start, x_start, y_end, color/*, Line_width, LINE_STy_LE_SOLID*/);
+        canvas_draw_line(canvas, x_end, y_end, x_end, y_start, color/*, Line_width, LINE_STy_LE_SOLID*/);
+        canvas_draw_line(canvas, x_end, y_end, x_start, y_end, color/*, Line_width, LINE_STy_LE_SOLID*/);
+    // }
+}
+
+void canvas_draw_circle(Canvas *canvas, uint32_t x_center, uint32_t y_center, uint32_t radius,
+                      CanvasColor color /*, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill*/)
+{
+    if (x_center > canvas->width || y_center >= canvas->height) {
+        // LOG_INFO("Paint_DrawCircle Input exceeds the normal display range\r\n");
+        return;
+    }
+
+    //Draw a circle from(0, R) as a starting point
+    int16_t x_current, y_current;
+    x_current = 0;
+    y_current = radius;
+
+    //Cumulative error,judge the next point of the logo
+    int16_t esp = 3 - (radius << 1 );
+
+    int16_t sCountY;
+    // if (Draw_Fill == DRAW_FILL_FULL) {
+    //     while (x_current <= y_current ) { //Realistic circles
+    //         for (sCountY = x_current; sCountY <= y_current; sCountY ++ ) {
+    //             canvas_draw_point(x_center + x_current, y_center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//1
+    //             canvas_draw_point(x_center - x_current, y_center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//2
+    //             canvas_draw_point(x_center - sCountY, y_center + x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//3
+    //             canvas_draw_point(x_center - sCountY, y_center - x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//4
+    //             canvas_draw_point(x_center - x_current, y_center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//5
+    //             canvas_draw_point(x_center + x_current, y_center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//6
+    //             canvas_draw_point(x_center + sCountY, y_center - x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//7
+    //             canvas_draw_point(x_center + sCountY, y_center + x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+    //         }
+    //         if (Esp < 0 )
+    //             Esp += 4 * x_current + 6;
+    //         else {
+    //             Esp += 10 + 4 * (x_current - y_current );
+    //             y_current --;
+    //         }
+    //         x_current ++;
+    //     }
+    // } else { //Draw a hollow circle
+        while (x_current <= y_current ) {
+            canvas_draw_point(canvas, x_center + x_current, y_center + y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//1
+            canvas_draw_point(canvas, x_center - x_current, y_center + y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//2
+            canvas_draw_point(canvas, x_center - y_current, y_center + x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//3
+            canvas_draw_point(canvas, x_center - y_current, y_center - x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//4
+            canvas_draw_point(canvas, x_center - x_current, y_center - y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//5
+            canvas_draw_point(canvas, x_center + x_current, y_center - y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//6
+            canvas_draw_point(canvas, x_center + y_current, y_center - x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//7
+            canvas_draw_point(canvas, x_center + y_current, y_center + x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//0
+
+            if (esp < 0 )
+                esp += 4 * x_current + 6;
+            else {
+                esp += 10 + 4 * (x_current - y_current );
+                y_current --;
+            }
+            x_current ++;
+        }
+    // }
 }
 
 void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite,

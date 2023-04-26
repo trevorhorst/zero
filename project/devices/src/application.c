@@ -216,6 +216,11 @@ int32_t application_run()
     uint32_t x = center_x - 2;
     uint32_t y = center_y - 2;
 
+    canvas_draw_line(&canvas, 0, 0, (OLED_HEIGHT - 1), (OLED_WIDTH - 1), CC_WHITE);
+    canvas_draw_line(&canvas, (OLED_HEIGHT - 1), 0, 0, (OLED_WIDTH - 1), CC_WHITE);
+    canvas_draw_rectangle(&canvas, 0, 0, (OLED_HEIGHT - 1), (OLED_WIDTH - 1), CC_WHITE);
+    canvas_draw_circle(&canvas, center_x, center_y, 25, CC_WHITE);
+    canvas_draw_circle(&canvas, center_x, center_y, 31, CC_WHITE);
     canvas_draw_point(&canvas, x, y, CC_WHITE, PIXEL_4X4);
     ssd1306_i2c_write(&display, canvas_buffer, canvas_buffer_length);
 
