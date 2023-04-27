@@ -1,7 +1,7 @@
 #include "core/draw/canvas.h"
 
 static const uint8_t canvas_reverse_nibble_lut[] = {
-    0x0, 0x8, 0x4, 0xC, 0x2, 0xA, 0x6, 0xE, 
+    0x0, 0x8, 0x4, 0xC, 0x2, 0xA, 0x6, 0xE,
     0x1, 0x9, 0x5, 0xD, 0x3, 0xB, 0x7, 0xF
 };
 
@@ -18,7 +18,7 @@ void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
     uint32_t image_height_bytes = height;
     uint32_t image_width_bytes = (width % 8 == 0) ? (width / 8) : ((width / 8) + 1);
     canvas->image = (uint8_t*)malloc((image_height_bytes * image_width_bytes) + 1);
-    
+
     if(canvas->image == NULL) {
         canvas->height = 0;
         canvas->width  = 0;
@@ -28,6 +28,9 @@ void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
         canvas->width  = width;
         canvas_fill(canvas, 0xFF);
     }
+
+    canvas->mirror = CANVAS_MIRROR_NONE;
+    canvas->rotate = CANVAS_ROTATE_0;
 }
 
 void canvas_deinitialize(Canvas *canvas)
@@ -70,12 +73,12 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
     }
 
     uint32_t x = x_point;
-    uint32_t y = y_point;    
+    uint32_t y = y_point;
 
     switch(rotate) {
     case 0:
         x = x_point;
-        y = y_point;  
+        y = y_point;
         break;
     case 90:
         x = y_point;
@@ -115,20 +118,26 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
     }
 }
 
-void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point, 
+void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
                        CanvasColor color, uint8_t size)
 {
     uint32_t x_coordinate = 0;
     uint32_t y_coordinate = 0;
+
+    if(size == 0) {
+        // This needs to be logged or the method should report an error at the least
+        return;
+    }
+
     for(x_coordinate = 0; x_coordinate < size; x_coordinate++) {
         for(y_coordinate = 0; y_coordinate < size; y_coordinate++) {
-            canvas_set_pixel(canvas, (x_point + x_coordinate), 
+            canvas_set_pixel(canvas, (x_point + x_coordinate),
                              (y_point + y_coordinate), canvas->rotate, canvas->mirror, color);
         }
     }
 }
 
-void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start, 
+void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start,
                       uint32_t x_end, uint32_t y_end, CanvasColor color)
 {
     uint16_t x_point = x_start;
@@ -259,7 +268,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
     uint32_t x = 0;
     uint32_t y = 0;
     uint32_t scanline_width = bmpss_scanline_width(bmp);
-    
+
     CanvasColor black = CC_BLACK;
     CanvasColor white = CC_WHITE;
     if(sprite->invert) {
@@ -267,10 +276,10 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
         white = CC_BLACK;
     }
 
-    for(y = 0; y < sprite->height; y++) {
-        if(debug){ printf("\n%02d: ", y); }
-        for(x = 0; x < (sprite->width / 8); x++) {
-            // Need to correlate the bitmap with the canvas. Bitmaps are stored 
+    for(y = 0; y < (uint32_t)sprite->height; y++) {
+        if(debug){ printf("\n%03d: ", y); }
+        for(x = 0; x < (uint32_t)(sprite->width / 8); x++) {
+            // Need to correlate the bitmap with the canvas. Bitmaps are stored
             // bottom to top
             uint32_t bmp_x = (sprite->x / 8) + x;
             // Handle from bottom to top
@@ -280,7 +289,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
 
             // canvas->image[canvas_x + canvas_y] = bmp->pixel_data[bmp_x + bmp_y];
             for(uint32_t i = 0; i < 8; i++) {
-                
+
                 // Calculate the point on the canvas
                 uint32_t canvas_x_point = ((x * 8 * size)) + (i * size);
                 uint32_t canvas_y_point = (y * size);
@@ -323,6 +332,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
             }
         }
     }
+    if(debug){ printf("\n"); }
 }
 
 void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite, uint32_t layer,
@@ -332,7 +342,7 @@ void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_vi
     uint32_t x = 0;
     uint32_t y = 0;
     uint32_t scanline_width = bmpss_scanline_width(bmp);
-    
+
     CanvasColor black = CC_BLACK;
     CanvasColor white = CC_WHITE;
     if(sprite->invert) {
@@ -343,7 +353,7 @@ void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_vi
     for(y = 0; y < sprite->height; y++) {
         // printf("\n%02d: ", y);
         for(x = 0; x < (sprite->width / 2); x++) {
-            // Need to correlate the bitmap with the canvas. Bitmaps are stored 
+            // Need to correlate the bitmap with the canvas. Bitmaps are stored
             // bottom to top
             uint32_t bmp_x = (sprite->x / 2) + x;
             // Handle from bottom to top
@@ -358,7 +368,7 @@ void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_vi
                 } else {
                     byte = bmp->pixel_data[bmp_x + bmp_y] & 0xF;
                 }
-                
+
                 // Calculate the point on the canvas
                 uint32_t canvas_x_point = ((x * 2 * size)) + (i * size);
                 uint32_t canvas_y_point = (y * size);

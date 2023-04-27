@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     core
     DESCRIPTION "RP2040 Core Library"
-    VERSION 0.4.0
+    VERSION 0.4.1
     LANGUAGES C CXX ASM
 )
 
@@ -22,7 +22,7 @@ set(SOURCE
     src/tools/i2c.c
     src/tools/weather.c
     src/types/hash_table.c
-    )   
+    )
 
 # List of header files
 set(HEADERS
@@ -41,20 +41,20 @@ set(HEADERS
     include/core/tools/weather.h
     include/core/types/hash_table.h
     include/core/version.h
-    )   
+    )
 
 add_library(
     ${PROJECT_NAME} STATIC
     ${SOURCE}
     ${HEADERS}
-    )   
+    )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC CORE_VERSION="${PROJECT_VERSION}")
 
 # pico_generate_pio_header(
-#     ${PROJECT_NAME} 
+#     ${PROJECT_NAME}
 #         ${CMAKE_CURRENT_LIST_DIR}/pio/ws2812.pio
-#     UTPUT_DIR 
+#     UTPUT_DIR
 #         ${CMAKE_CURRENT_LIST_DIR}/generated
 # )
 
@@ -75,7 +75,7 @@ target_include_directories(
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-    )   
+    )
 
 # Create the __FILENAME__ macro for use with the logger
 define_file_basename_for_sources(${PROJECT_NAME})
