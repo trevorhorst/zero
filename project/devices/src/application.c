@@ -224,19 +224,21 @@ int32_t application_run()
     sprite.magnify = 1;
 
     Canvas ss_canvas;
-    uint32_t ss_canvas_buffer_length = (((ss.bitmap.info_header.width * ss.bitmap.info_header.height) / 8) + 1);
+    uint32_t ss_canvas_buffer_length = (((ss.bitmap.info_header.width * ss.bitmap.info_header.height) / 8));
     uint8_t *ss_canvas_buffer = (uint8_t *)malloc(ss_canvas_buffer_length);
 
     ss_canvas.mirror = CANVAS_MIRROR_NONE;
     ss_canvas.rotate = CANVAS_ROTATE_0;
     ss_canvas.height = OLED_WIDTH;
     ss_canvas.width  = OLED_HEIGHT;
-    ss_canvas.image = &ss_canvas_buffer[1];
-    canvas_fill(&ss_canvas, 0xAA);
+    ss_canvas.image = ss_canvas_buffer;
+    canvas_fill(&ss_canvas, 0x00);
     canvas_draw_bmp_sprite(&ss_canvas, &(ss.bitmap), &sprite, 0, 0);
-    ss_canvas_buffer[0] = OLED_I2C_CONTROL_BYTE(0, 1);
+    // ss_canvas_buffer[0] = OLED_I2C_CONTROL_BYTE(0, 1);
 
-    ssd1306_i2c_write(&display, ss_canvas_buffer, ss_canvas_buffer_length);
+    // ssd1306_i2c_write(&display, ss_canvas_buffer, ss_canvas_buffer_length);
+    ssd1306_i2c_write_raw(&display, ss_canvas_buffer, ss_canvas_buffer_length);
+    // ssd1306_i2c_write_data(&display, ss_canvas_buffer, ss_canvas_buffer_length);
 
     uint32_t center_x = OLED_HEIGHT / 2;
     uint32_t center_y = OLED_WIDTH / 2;
