@@ -76,8 +76,8 @@ typedef struct bmp_sprite_t {
 } bmp_sprite;
 
 /**
- * @brief Initialize the sprite sheet struct 
- * 
+ * @brief Initialize the sprite sheet struct
+ *
  * @param ss Pointer to a sprite sheet object
  * @param filename Name of the file used to initialize the sprite sheet object
  * @return int8_t Value indicating success of the operation (0 on success)
@@ -88,9 +88,11 @@ int8_t bmpss_initialize_from_resource(BmpSpriteSheet *ss, char *resource, unsign
 
 int8_t bmpss_sprite_initialize(BmpSpriteSheet *ss, bmp_sprite *sprite);
 
+int8_t bmpss_sprite_view_initialize(bmp_sprite_view *sprite);
+
 /**
  * @brief De-Initialize the sprite sheet struct
- * 
+ *
  * @param ss Pointer to a sprite sheet object
  * @return int8_t Value indicating success of the operation (0 on success)
  */
@@ -100,7 +102,7 @@ int32_t bmpss_scanline_width(Bitmap *bmp);
 
 /**
  * @brief  Prints the entire sprite sheet to console for easy viewing
- * 
+ *
  * @param ss Pointer to a sprite sheet object
  */
 void bmpss_print_sheet(BmpSpriteSheet *ss);
@@ -109,8 +111,8 @@ void bmpss_print_grayscale_sheet(BmpSpriteSheet *ss);
 
 
 /**
- * @brief  Prints a subset of the sprite sheet for easy viewing 
- * 
+ * @brief  Prints a subset of the sprite sheet for easy viewing
+ *
  * @param ss Pointer to a sprite sheet object
  * @param sprite Pointer to a sprite object
  */

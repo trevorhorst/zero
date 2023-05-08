@@ -20,7 +20,7 @@ endfunction()
 project(
     zero
     VERSION 0.0.1
-    LANGUAGES C ASM
+    # LANGUAGES C CXX ASM
     DESCRIPTION "RP2040 Zero")
 
 if(DEFINED ENV{CONTROL_PROD})

@@ -39,6 +39,7 @@ void bmpss_print_pixel(uint8_t byte)
 {
     for(int8_t i = 0; i < 8; i++) {
         uint8_t shift = 1 << (7 - i);
+        // uint8_t shift = 1 << (i);
         if(byte & shift) {
             printf("0");
         } else {
@@ -62,7 +63,7 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, const char *filename)
         if(read == sizeof(BitmapHeader)) {
             bmpss_print_header(&(ss->bitmap.header));
         }
-    
+
         // Get the infoheader
         header = (char*)&(ss->bitmap.info_header);
         read = fread(header, sizeof(char), sizeof(BitmapInfoHeader), fp);
@@ -84,7 +85,7 @@ int8_t bmpss_initialize(BmpSpriteSheet *ss, const char *filename)
         fread(pixel_data, sizeof(char), pixel_data_size, fp);
         ss->bitmap.pixel_data = pixel_data;
         // bmpss_print_raw_data(ss->bitmap.pixel_data, pixel_data_size, 8);
-    
+
         fclose(fp);
         fp = NULL;
     }
@@ -101,7 +102,7 @@ int8_t bmpss_initialize_from_resource(BmpSpriteSheet *ss, char *resource, unsign
     ss->bitmap = *(Bitmap*)&resource[offset];
     bmpss_print_header(&(ss->bitmap.header));
     bmpss_print_info_header(&(ss->bitmap.info_header));
-    
+
     int32_t header_size = sizeof(BitmapHeader) + sizeof(BitmapInfoHeader);
     // int32_t color_table_size = sizeof(ColorTable) * ss->bitmap.info_header.colorsUsed;
     int32_t color_table_size = ss->bitmap.header.dataOffset - (sizeof(BitmapHeader) + sizeof(BitmapInfoHeader));
@@ -121,6 +122,17 @@ int8_t bmpss_initialize_from_resource(BmpSpriteSheet *ss, char *resource, unsign
 int8_t bmpss_sprite_initialize(BmpSpriteSheet *ss, bmp_sprite *sprite)
 {
     int8_t success = 0;
+    return success;
+}
+
+int8_t bmpss_sprite_view_initialize(bmp_sprite_view *sprite)
+{
+    int8_t success = 0;
+    sprite->x = 0;
+    sprite->y = 0;
+    sprite->invert = 0;
+    sprite->rotate = 0;
+    sprite->magnify = 1;
     return success;
 }
 
@@ -199,13 +211,13 @@ void bmpss_print_grayscale_sprite(BmpSpriteSheet *ss, bmp_sprite_view *sprite)
     int32_t scanline_width = bmpss_scanline_width(&(ss->bitmap));
     for(int32_t h = sprite->height - 1; h >= 0; h--) {
     //for(int32_t h = 0; h < sprite->height; h++) {
-        printf("%02d: ", h); 
+        printf("%02d: ", h);
         for(int32_t w = 0; w < ((sprite->width) / 2); w++) {
             // int32_t y = ((sprite->height - h - 1) + sprite->y) * scanline_width;
             int32_t y = ((h) + sprite->y) * scanline_width;
-            int32_t x = w + (sprite->x / 2); 
+            int32_t x = w + (sprite->x / 2);
             bmpss_print_grayscale_pixel(ss->bitmap.pixel_data[y + x]);
         }
         printf("\n");
-    }   
+    }
 }
