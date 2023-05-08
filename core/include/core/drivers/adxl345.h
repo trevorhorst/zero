@@ -5,6 +5,7 @@
 #include "core/logger.h"
 
 #define ADXL345_I2C_ADDRESS(SD0)    SD0 ? 0x1D : 0x53
+#define ADXL345_DEVICE_ID           0xE5    // 345 Octal
 
 // Register map
 #define ADXL345_REG_DEVID       0x00
@@ -17,8 +18,6 @@
 #define ADXL345_REG_DATAY1      0x35
 #define ADXL345_REG_DATAZ0      0x36
 #define ADXL345_REG_DATAZ1      0x37
-
-#define ADXL345_MEASUREMENT
 
 typedef struct adxl345_i2c_device_t {
     i2c_inst_t *bus;
@@ -64,12 +63,36 @@ typedef union adxl345_data_t {
 #define ADXL345_RANGE_8G    0b10;
 #define ADXL345_RANGE_16G   0b11;
 
+/**
+ * @brief Writes a single byte to the ADXL345
+ * 
+ * @param device Desired device to write to
+ * @param address Register address
+ * @param byte Data to be written
+ * @return int32_t Number of bytes written
+ */
 int32_t adxl345_i2c_write_byte(adxl345_i2c_device *device, uint8_t address, uint8_t byte);
 int32_t adxl345_i2c_read(adxl345_i2c_device *device, uint8_t address, uint8_t *buffer, uint32_t buffer_length);
 
+/**
+ * @brief Set the data format register which controls how data is presented
+ * 
+ * @param device Desired target device
+ * @param value Container of data format settings
+ * @return int32_t 
+ */
 int32_t adxl345_i2c_set_data_format(adxl345_i2c_device *device, adxl345_data_format *value);
+
+/**
+ * @brief Set the power control register
+ * 
+ * @param device Desired target device
+ * @param value Container of power control settings
+ * @return int32_t 
+ */
 int32_t adxl345_i2c_set_power_ctl(adxl345_i2c_device *device, const adxl345_power_ctl *value);
 
+uint8_t adxl345_i2c_get_devid(adxl345_i2c_device *device);
 int32_t adxl345_i2c_get_thresh_tap(adxl345_i2c_device *device);
 int32_t adxl345_i2c_get_data(adxl345_i2c_device *device, adxl345_data *data);
 

@@ -13,6 +13,13 @@ int32_t adxl345_i2c_read(adxl345_i2c_device *device, uint8_t address, uint8_t *b
     return i2c_read_blocking(device->bus, device->address, buffer, buffer_length, false);
 }
 
+uint8_t adxl345_i2c_get_devid(adxl345_i2c_device *device)
+{
+    uint8_t devid = 0;
+    adxl345_i2c_read(device, ADXL345_REG_DEVID, &devid, sizeof(devid));
+    return devid;
+}
+
 int32_t adxl345_i2c_get_thresh_tap(adxl345_i2c_device *device)
 {
     uint8_t buffer[1];
