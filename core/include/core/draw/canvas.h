@@ -8,6 +8,7 @@
 
 typedef struct {
     uint8_t *image;
+    uint32_t size;
     uint32_t height;
     uint32_t width;
     uint32_t rotate;
@@ -20,7 +21,7 @@ typedef enum {
 } CanvasColor;
 
 typedef enum {
-    PIXEL_1X1 = 1, 
+    PIXEL_1X1 = 1,
     PIXEL_2X2 = 2,
     PIXEL_3X3 = 3,
     PIXEL_4X4 = 4,
@@ -48,10 +49,10 @@ void canvas_print(Canvas *canvas);
 void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32_t rotate, uint32_t mirror,
                       CanvasColor color);
 
-void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point, 
+void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
                        CanvasColor color, uint8_t size);
 
-void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start, 
+void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start,
                       uint32_t x_end, uint32_t y_end, CanvasColor color);
 
 void canvas_draw_rectangle(Canvas *canvas, uint32_t Xstart, uint32_t Ystart, uint32_t Xend, uint32_t Yend,

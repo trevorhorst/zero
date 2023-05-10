@@ -22,10 +22,12 @@ void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
     if(canvas->image == NULL) {
         canvas->height = 0;
         canvas->width  = 0;
+        canvas->size   = 0;
     } else {
         // Memory successfully acquired, initialized the canvas
         canvas->height = height;
         canvas->width  = width;
+        canvas->size   = (height * width) / 8;
         canvas_fill(canvas, 0xFF);
     }
 

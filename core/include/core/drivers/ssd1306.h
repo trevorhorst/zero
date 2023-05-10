@@ -67,6 +67,7 @@ enum ssd1306_write_type {
 };
 
 int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length);
+int32_t ssd1306_i2c_write_command(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length);
 int32_t ssd1306_i2c_write_data(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length);
 
 /**
@@ -78,7 +79,8 @@ int32_t ssd1306_i2c_write_data(ssd1306_i2c_device *device, const uint8_t *buffer
  * @param buffer_length
  * @return
  */
-int32_t ssd1306_i2c_write_raw(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length);
+int32_t ssd1306_i2c_write_raw(ssd1306_i2c_device *device, enum ssd1306_write_type type,
+                              const uint8_t *buffer, uint32_t buffer_length);
 int32_t ssd1306_i2c_read(ssd1306_i2c_device *device, uint8_t *buffer, uint32_t buffer_length);
 // int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, enum ssd1306_write_type type, const uint8_t *buffer, uint32_t buffer_length);
 int32_t ssd1306_i2c_initialize_device(ssd1306_i2c_device *dev);
