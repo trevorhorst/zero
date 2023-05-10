@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "core/console/console.h"
+#include "core/draw/bmpspritesheet.h"
 #include "core/draw/canvas.h"
 #include "core/drivers/adxl345.h"
 #include "core/drivers/at24c.h"
@@ -9,6 +10,7 @@
 #include "core/tools/i2c.h"
 
 #include "project/application.h"
+#include "project/resources.h"
 
 #include "hardware/i2c.h"
 
@@ -32,6 +34,30 @@ uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_
 adxl345_i2c_device accelerometer;
 ssd1306_i2c_device display;
 at24cxxx_i2c_device eeprom;
+
+void render_splash_screen()
+{
+    // Initialize sprite sheet from our resources
+    BmpSpriteSheet ss;
+    bmpss_initialize_from_resource(&ss, sarah_bmp, sarah_bmp_size);
+
+    // Initialize a canvas for rendering
+    Canvas ss_canvas;
+    canvas_initialize(&ss_canvas, ss.bitmap.info_header.height, ss.bitmap.info_header.width);
+    canvas_fill(&ss_canvas, 0x00);
+
+    // Initialize a sprite the size of the bitmap (since the whole bitmap will
+    // be our sprite)
+    bmp_sprite_view sprite = {.x = 0, .y = 0, .width = ss.bitmap.info_header.width,
+                             .height = ss.bitmap.info_header.height, .invert = 0,
+                             .rotate = CANVAS_ROTATE_0, .magnify = 1};
+
+    // Draw the sprite to canvas
+    canvas_draw_bmp_sprite(&ss_canvas, &(ss.bitmap), &sprite, 0, 0);
+
+    // Draw the canvas to the display
+    ssd1306_i2c_write_data(&display, ss_canvas.image, ss_canvas.size);
+}
 
 void initialize_i2c(i2c_inst_t *bus)
 {
@@ -69,15 +95,15 @@ void initialize_display(ssd1306_i2c_device *device)
     LOG_INFO("Initializing Display...\n");
     device->address = 0x3C;
     device->bus     = i2c0;
-    
+
     ssd1306_i2c_initialize_device(&display);
     ssd1306_i2c_reset_cursor(&display);
-    // ssd1306_display(&display, canvas.image, buffer_length);
     ssd1306_i2c_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
-    // ssd1306_i2c_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
 
-    // int8_t buffer[] = {OLED_I2C_CONTROL_BYTE(0, 1), 0x7C, 0x12, 0x11, 0x12, 0x7C, 0x00, 0x00, 0x00 };
-    // ssd1306_i2c_write(&display, buffer, sizeof(buffer));
+    render_splash_screen();
+    sleep_ms(2000);
+
+    ssd1306_i2c_clear_display(&display);
 }
 
 void initialize_eeprom(at24cxxx_i2c_device *device)
@@ -143,7 +169,7 @@ uint32_t eeprom_operation(int32_t argc, char **argv)
 
             uint8_t *buffer = (uint8_t*)malloc(sizeof(uint8_t) * length);
             at24cxxx_random_read(&eeprom, address, buffer, length);
-            
+
             for(int32_t i = 0; i < length; i++) {
                 LOG_INFO("0x%02X --> 0x%02X\n", address + i, buffer[i]);
             }
@@ -164,11 +190,12 @@ uint32_t display_operation(int32_t argc, char **argv)
         printf("0x%02X\n", buffer[i]);
     }
 
-     return 0;
+    return 0;
 }
 
 uint32_t accelerometer_operation(int32_t argc, char **argv)
 {
+    uint32_t success = 0;
     // uint8_t devid = 0;
     // adxl345_i2c_read(&accelerometer, ADXL345_REG_DEVID, &devid, sizeof(devid));
     // LOG_INFO("DEVID: 0x%02X\n", devid);
@@ -178,11 +205,9 @@ uint32_t accelerometer_operation(int32_t argc, char **argv)
     printf("X: %d   Y: %d   Z: %d\n", data.f.datax, data.f.datay, data.f.dataz);
 
     // LOG_INFO("DEVID: 0x%02X\n", devid);
+    return success;
 }
 
-uint32_t draw()
-{
-}
 
 int32_t application_run()
 {
@@ -201,13 +226,14 @@ int32_t application_run()
     canvas.width  = OLED_HEIGHT;
     canvas.image = &canvas_buffer[1];
 
+    canvas_buffer[0] = OLED_I2C_CONTROL_BYTE(0, 1);
+    canvas_fill(&canvas, 0x00);
+
+
     initialize_i2c(i2c0);
     initialize_accelerometer(&accelerometer);
     initialize_display(&display);
-    initialize_eeprom(&eeprom);
-
-    canvas_buffer[0] = OLED_I2C_CONTROL_BYTE(0, 1);
-    canvas_fill(&canvas, 0x00);
+    // initialize_eeprom(&eeprom);
 
 
     uint32_t center_x = OLED_HEIGHT / 2;
@@ -216,6 +242,11 @@ int32_t application_run()
     uint32_t x = center_x - 2;
     uint32_t y = center_y - 2;
 
+    canvas_draw_line(&canvas, 0, 0, (OLED_HEIGHT - 1), (OLED_WIDTH - 1), CC_WHITE);
+    canvas_draw_line(&canvas, (OLED_HEIGHT - 1), 0, 0, (OLED_WIDTH - 1), CC_WHITE);
+    canvas_draw_rectangle(&canvas, 0, 0, (OLED_HEIGHT - 1), (OLED_WIDTH - 1), CC_WHITE);
+    canvas_draw_circle(&canvas, center_x, center_y, 25, CC_WHITE);
+    canvas_draw_circle(&canvas, center_x, center_y, 31, CC_WHITE);
     canvas_draw_point(&canvas, x, y, CC_WHITE, PIXEL_4X4);
     ssd1306_i2c_write(&display, canvas_buffer, canvas_buffer_length);
 
@@ -239,12 +270,12 @@ int32_t application_run()
 
     while(true) {
         // Clear previous point
-        canvas_draw_point(&canvas, x, y, CC_BLACK, PIXEL_4X4);
+        // canvas_draw_point(&canvas, x, y, CC_BLACK, PIXEL_4X4);
 
         // sleep_ms(10);
         adxl345_data data;
-        adxl345_i2c_get_data(&accelerometer, &data);
-        printf("X: %d   Y: %d   Z: %d\n", data.f.datax, data.f.datay, data.f.dataz);
+        // adxl345_i2c_get_data(&accelerometer, &data);
+        // printf("X: %d   Y: %d   Z: %d\n", data.f.datax, data.f.datay, data.f.dataz);
 
         x = center_x - data.f.datay;
         if(data.f.datay >= x_range) {
@@ -261,7 +292,7 @@ int32_t application_run()
         }
 
         canvas_draw_point(&canvas, x, y, CC_WHITE, PIXEL_4X4);
-        ssd1306_i2c_write(&display, canvas_buffer, canvas_buffer_length);
+        // ssd1306_i2c_write(&display, canvas_buffer, canvas_buffer_length);
     }
 
     free(canvas.image);

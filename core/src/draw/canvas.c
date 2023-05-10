@@ -1,7 +1,7 @@
 #include "core/draw/canvas.h"
 
 static const uint8_t canvas_reverse_nibble_lut[] = {
-    0x0, 0x8, 0x4, 0xC, 0x2, 0xA, 0x6, 0xE, 
+    0x0, 0x8, 0x4, 0xC, 0x2, 0xA, 0x6, 0xE,
     0x1, 0x9, 0x5, 0xD, 0x3, 0xB, 0x7, 0xF
 };
 
@@ -18,16 +18,21 @@ void canvas_initialize(Canvas *canvas, uint32_t height, uint32_t width)
     uint32_t image_height_bytes = height;
     uint32_t image_width_bytes = (width % 8 == 0) ? (width / 8) : ((width / 8) + 1);
     canvas->image = (uint8_t*)malloc((image_height_bytes * image_width_bytes) + 1);
-    
+
     if(canvas->image == NULL) {
         canvas->height = 0;
         canvas->width  = 0;
+        canvas->size   = 0;
     } else {
         // Memory successfully acquired, initialized the canvas
         canvas->height = height;
         canvas->width  = width;
+        canvas->size   = (height * width) / 8;
         canvas_fill(canvas, 0xFF);
     }
+
+    canvas->mirror = CANVAS_MIRROR_NONE;
+    canvas->rotate = CANVAS_ROTATE_0;
 }
 
 void canvas_deinitialize(Canvas *canvas)
@@ -70,12 +75,12 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
     }
 
     uint32_t x = x_point;
-    uint32_t y = y_point;    
+    uint32_t y = y_point;
 
     switch(rotate) {
     case 0:
         x = x_point;
-        y = y_point;  
+        y = y_point;
         break;
     case 90:
         x = y_point;
@@ -115,24 +120,147 @@ void canvas_set_pixel(Canvas *canvas, uint32_t x_point, uint32_t y_point, uint32
     }
 }
 
-void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point, 
+void canvas_draw_point(Canvas *canvas, uint32_t x_point, uint32_t y_point,
                        CanvasColor color, uint8_t size)
 {
     uint32_t x_coordinate = 0;
     uint32_t y_coordinate = 0;
+
+    if(size == 0) {
+        // This needs to be logged or the method should report an error at the least
+        return;
+    }
+
     for(x_coordinate = 0; x_coordinate < size; x_coordinate++) {
         for(y_coordinate = 0; y_coordinate < size; y_coordinate++) {
-            canvas_set_pixel(canvas, (x_point + x_coordinate), 
+            canvas_set_pixel(canvas, (x_point + x_coordinate),
                              (y_point + y_coordinate), canvas->rotate, canvas->mirror, color);
         }
     }
 }
 
-void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start, 
-                      uint32_t x_end, uint32_t y_end)
+void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start,
+                      uint32_t x_end, uint32_t y_end, CanvasColor color)
 {
+    uint16_t x_point = x_start;
+    uint16_t y_point = y_start;
     int dx = (int)x_end - (int)x_start >= 0 ? x_end - x_start : x_start - x_end;
     int dy = (int)y_end - (int)y_start <= 0 ? y_end - y_start : y_start - y_end;
+
+    // Increment direction, 1 is positive, -1 is counter;
+    int x_addway = x_start < x_end ? 1 : -1;
+    int y_addway = y_start < y_end ? 1 : -1;
+
+    //Cumulative error
+    int esp = dx + dy;
+    char dotted_len = 0;
+
+    for(;;) {
+        // dotted_len++;
+        // //Painted dotted line, 2 point is really virtual
+        // if (Line_Style == LINE_STYLE_DOTTED && dotted_len % 3 == 0) {
+        //     //LOG_INFO("LINE_DOTTED\r\n");
+        //     Paint_DrawPoint(Xpoint, Ypoint, IMAGE_BACKGROUND, Line_width, DOT_STYLE_DFT);
+        //     dotted_len = 0;
+        // } else {
+            // Paint_DrawPoint(x_point, y_point, CC_BLACK, Line_width, DOT_STYLE_DFT);
+            canvas_draw_point(canvas, x_point, y_point, color, PIXEL_1X1);
+        // }
+        if (2 * esp >= dy) {
+            if (x_point == x_end)
+                break;
+            esp += dy;
+            x_point += x_addway;
+        }
+        if(2 * esp <= dx) {
+            if(y_point == y_end) {
+                break;
+            }
+            esp += dx;
+            y_point += y_addway;
+        }
+    }
+}
+
+void canvas_draw_rectangle(Canvas *canvas, uint32_t x_start, uint32_t y_start, uint32_t x_end, uint32_t y_end,
+                         CanvasColor color /*, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill*/)
+{
+   if (x_start > canvas->width || y_start > canvas->height ||
+        x_end > canvas->width || y_end > canvas->height) {
+        // LOG_INFO("Input exceeds the normal display range\r\n");
+        return;
+    }
+
+    // if (Draw_Fill) {
+    //     UWORD Ypoint;
+    //     for(Ypoint = Ystart; Ypoint < Yend; Ypoint++) {
+    //         Paint_DrawLine(Xstart, Ypoint, Xend, Ypoint, Color , Line_width, LINE_STYLE_SOLID);
+    //     }
+    // } else {
+        canvas_draw_line(canvas, x_start, y_start, x_end, y_start, color/*, Line_width, LINE_STy_LE_SOLID*/);
+        canvas_draw_line(canvas, x_start, y_start, x_start, y_end, color/*, Line_width, LINE_STy_LE_SOLID*/);
+        canvas_draw_line(canvas, x_end, y_end, x_end, y_start, color/*, Line_width, LINE_STy_LE_SOLID*/);
+        canvas_draw_line(canvas, x_end, y_end, x_start, y_end, color/*, Line_width, LINE_STy_LE_SOLID*/);
+    // }
+}
+
+void canvas_draw_circle(Canvas *canvas, uint32_t x_center, uint32_t y_center, uint32_t radius,
+                      CanvasColor color /*, DOT_PIXEL Line_width, DRAW_FILL Draw_Fill*/)
+{
+    if (x_center > canvas->width || y_center >= canvas->height) {
+        // LOG_INFO("Paint_DrawCircle Input exceeds the normal display range\r\n");
+        return;
+    }
+
+    //Draw a circle from(0, R) as a starting point
+    int16_t x_current, y_current;
+    x_current = 0;
+    y_current = radius;
+
+    //Cumulative error,judge the next point of the logo
+    int16_t esp = 3 - (radius << 1 );
+
+    int16_t sCountY;
+    // if (Draw_Fill == DRAW_FILL_FULL) {
+    //     while (x_current <= y_current ) { //Realistic circles
+    //         for (sCountY = x_current; sCountY <= y_current; sCountY ++ ) {
+    //             canvas_draw_point(x_center + x_current, y_center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//1
+    //             canvas_draw_point(x_center - x_current, y_center + sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//2
+    //             canvas_draw_point(x_center - sCountY, y_center + x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//3
+    //             canvas_draw_point(x_center - sCountY, y_center - x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//4
+    //             canvas_draw_point(x_center - x_current, y_center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//5
+    //             canvas_draw_point(x_center + x_current, y_center - sCountY, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//6
+    //             canvas_draw_point(x_center + sCountY, y_center - x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);//7
+    //             canvas_draw_point(x_center + sCountY, y_center + x_current, Color, DOT_PIXEL_DFT, DOT_STYLE_DFT);
+    //         }
+    //         if (Esp < 0 )
+    //             Esp += 4 * x_current + 6;
+    //         else {
+    //             Esp += 10 + 4 * (x_current - y_current );
+    //             y_current --;
+    //         }
+    //         x_current ++;
+    //     }
+    // } else { //Draw a hollow circle
+        while (x_current <= y_current ) {
+            canvas_draw_point(canvas, x_center + x_current, y_center + y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//1
+            canvas_draw_point(canvas, x_center - x_current, y_center + y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//2
+            canvas_draw_point(canvas, x_center - y_current, y_center + x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//3
+            canvas_draw_point(canvas, x_center - y_current, y_center - x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//4
+            canvas_draw_point(canvas, x_center - x_current, y_center - y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//5
+            canvas_draw_point(canvas, x_center + x_current, y_center - y_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//6
+            canvas_draw_point(canvas, x_center + y_current, y_center - x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//7
+            canvas_draw_point(canvas, x_center + y_current, y_center + x_current, color, PIXEL_1X1/*, Line_width, DOT_STYLE_DFT*/);//0
+
+            if (esp < 0 )
+                esp += 4 * x_current + 6;
+            else {
+                esp += 10 + 4 * (x_current - y_current );
+                y_current --;
+            }
+            x_current ++;
+        }
+    // }
 }
 
 void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite,
@@ -142,7 +270,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
     uint32_t x = 0;
     uint32_t y = 0;
     uint32_t scanline_width = bmpss_scanline_width(bmp);
-    
+
     CanvasColor black = CC_BLACK;
     CanvasColor white = CC_WHITE;
     if(sprite->invert) {
@@ -150,10 +278,10 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
         white = CC_BLACK;
     }
 
-    for(y = 0; y < sprite->height; y++) {
-        if(debug){ printf("\n%02d: ", y); }
-        for(x = 0; x < (sprite->width / 8); x++) {
-            // Need to correlate the bitmap with the canvas. Bitmaps are stored 
+    for(y = 0; y < (uint32_t)sprite->height; y++) {
+        if(debug){ printf("\n%03d: ", y); }
+        for(x = 0; x < (uint32_t)(sprite->width / 8); x++) {
+            // Need to correlate the bitmap with the canvas. Bitmaps are stored
             // bottom to top
             uint32_t bmp_x = (sprite->x / 8) + x;
             // Handle from bottom to top
@@ -163,7 +291,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
 
             // canvas->image[canvas_x + canvas_y] = bmp->pixel_data[bmp_x + bmp_y];
             for(uint32_t i = 0; i < 8; i++) {
-                
+
                 // Calculate the point on the canvas
                 uint32_t canvas_x_point = ((x * 8 * size)) + (i * size);
                 uint32_t canvas_y_point = (y * size);
@@ -206,6 +334,7 @@ void canvas_draw_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite
             }
         }
     }
+    if(debug){ printf("\n"); }
 }
 
 void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_view *sprite, uint32_t layer,
@@ -215,7 +344,7 @@ void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_vi
     uint32_t x = 0;
     uint32_t y = 0;
     uint32_t scanline_width = bmpss_scanline_width(bmp);
-    
+
     CanvasColor black = CC_BLACK;
     CanvasColor white = CC_WHITE;
     if(sprite->invert) {
@@ -226,7 +355,7 @@ void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_vi
     for(y = 0; y < sprite->height; y++) {
         // printf("\n%02d: ", y);
         for(x = 0; x < (sprite->width / 2); x++) {
-            // Need to correlate the bitmap with the canvas. Bitmaps are stored 
+            // Need to correlate the bitmap with the canvas. Bitmaps are stored
             // bottom to top
             uint32_t bmp_x = (sprite->x / 2) + x;
             // Handle from bottom to top
@@ -241,7 +370,7 @@ void canvas_draw_grayscale_bmp_sprite(Canvas *canvas, Bitmap *bmp, bmp_sprite_vi
                 } else {
                     byte = bmp->pixel_data[bmp_x + bmp_y] & 0xF;
                 }
-                
+
                 // Calculate the point on the canvas
                 uint32_t canvas_x_point = ((x * 2 * size)) + (i * size);
                 uint32_t canvas_y_point = (y * size);

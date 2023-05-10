@@ -5,6 +5,156 @@ int32_t ssd1306_i2c_write(ssd1306_i2c_device *device, const uint8_t *buffer, uin
     return i2c_write_blocking(device->bus, device->address, buffer, buffer_length, false);
 }
 
+int32_t ssd1306_i2c_write_data(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length)
+{
+    return ssd1306_i2c_write_raw(device, SSD1306_WRITE_DATA, buffer, buffer_length);
+}
+
+int32_t ssd1306_i2c_write_command(ssd1306_i2c_device *device, const uint8_t *buffer, uint32_t buffer_length)
+{
+    return ssd1306_i2c_write_raw(device, SSD1306_WRITE_COMMAND, buffer, buffer_length);
+}
+
+int32_t ssd1306_i2c_write_raw(ssd1306_i2c_device *device, enum ssd1306_write_type type,
+                              const uint8_t *buffer, uint32_t buffer_length)
+{
+    i2c_inst_t *i2c = device->bus;
+    uint8_t addr = device->address;
+    size_t len = buffer_length;
+    const uint8_t *src = buffer;
+    bool nostop = false;
+
+    invalid_params_if(I2C, addr >= 0x80); // 7-bit addresses
+    // invalid_params_if(I2C, i2c_reserved_addr(addr));
+    // Synopsys hw accepts start/stop flags alongside data items in the same
+    // FIFO word, so no 0 byte transfers.
+    invalid_params_if(I2C, len == 0);
+    invalid_params_if(I2C, ((int)len) < 0);
+
+    i2c->hw->enable = 0;
+    i2c->hw->tar = addr;
+    i2c->hw->enable = 1;
+
+    bool abort = false;
+    bool timeout = false;
+
+    uint8_t control_byte = 0;
+    if(type == SSD1306_WRITE_DATA) {
+        control_byte = OLED_I2C_CONTROL_BYTE(0, 1);
+    } else if(type == SSD1306_WRITE_COMMAND) {
+        control_byte = OLED_I2C_CONTROL_BYTE(0, 0);
+    }
+
+    i2c->hw->data_cmd =
+            bool_to_bit(1 && i2c->restart_on_next) << I2C_IC_DATA_CMD_RESTART_LSB |
+            bool_to_bit(0 && !nostop) << I2C_IC_DATA_CMD_STOP_LSB |
+            control_byte;
+
+    // Wait until the transmission of the address/data from the internal
+    // shift register has completed. For this to function correctly, the
+    // TX_EMPTY_CTRL flag in IC_CON must be set. The TX_EMPTY_CTRL flag
+    // was set in i2c_init.
+    do {
+        // if (timeout_check) {
+        //     timeout = timeout_check(ts);
+        //     abort |= timeout;
+        // }
+        tight_loop_contents();
+    } while (!timeout && !(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_TX_EMPTY_BITS));
+
+    uint32_t abort_reason = 0;
+    int byte_ctr;
+
+    int ilen = (int)len;
+    for (byte_ctr = 0; byte_ctr < ilen; ++byte_ctr) {
+        // bool first = byte_ctr == 0;
+        bool first = 0;
+        bool last = byte_ctr == ilen - 1;
+
+        i2c->hw->data_cmd =
+                bool_to_bit(first && i2c->restart_on_next) << I2C_IC_DATA_CMD_RESTART_LSB |
+                bool_to_bit(last && !nostop) << I2C_IC_DATA_CMD_STOP_LSB |
+                *src++;
+
+        // Wait until the transmission of the address/data from the internal
+        // shift register has completed. For this to function correctly, the
+        // TX_EMPTY_CTRL flag in IC_CON must be set. The TX_EMPTY_CTRL flag
+        // was set in i2c_init.
+        do {
+            // if (timeout_check) {
+            //     timeout = timeout_check(ts);
+            //     abort |= timeout;
+            // }
+            tight_loop_contents();
+        } while (!timeout && !(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_TX_EMPTY_BITS));
+
+        // If there was a timeout, don't attempt to do anything else.
+        if (!timeout) {
+            abort_reason = i2c->hw->tx_abrt_source;
+            if (abort_reason) {
+                // Note clearing the abort flag also clears the reason, and
+                // this instance of flag is clear-on-read! Note also the
+                // IC_CLR_TX_ABRT register always reads as 0.
+                i2c->hw->clr_tx_abrt;
+                abort = true;
+            }
+
+            if (abort || (last && !nostop)) {
+                // If the transaction was aborted or if it completed
+                // successfully wait until the STOP condition has occured.
+
+                // TODO Could there be an abort while waiting for the STOP
+                // condition here? If so, additional code would be needed here
+                // to take care of the abort.
+                do {
+                    // if (timeout_check) {
+                    //     timeout = timeout_check(ts);
+                    //     abort |= timeout;
+                    // }
+                    tight_loop_contents();
+                } while (!timeout && !(i2c->hw->raw_intr_stat & I2C_IC_RAW_INTR_STAT_STOP_DET_BITS));
+
+                // If there was a timeout, don't attempt to do anything else.
+                if (!timeout) {
+                    i2c->hw->clr_stop_det;
+                }
+            }
+        }
+
+        // Note the hardware issues a STOP automatically on an abort condition.
+        // Note also the hardware clears RX FIFO as well as TX on abort,
+        // because we set hwparam IC_AVOID_RX_FIFO_FLUSH_ON_TX_ABRT to 0.
+        if (abort)
+            break;
+    }
+
+    int rval;
+
+    // A lot of things could have just happened due to the ingenious and
+    // creative design of I2C. Try to figure things out.
+    if (abort) {
+        if (timeout)
+            rval = PICO_ERROR_TIMEOUT;
+        else if (!abort_reason || abort_reason & I2C_IC_TX_ABRT_SOURCE_ABRT_7B_ADDR_NOACK_BITS) {
+            // No reported errors - seems to happen if there is nothing connected to the bus.
+            // Address byte not acknowledged
+            rval = PICO_ERROR_GENERIC;
+        } else if (abort_reason & I2C_IC_TX_ABRT_SOURCE_ABRT_TXDATA_NOACK_BITS) {
+            // Address acknowledged, some data not acknowledged
+            rval = byte_ctr;
+        } else {
+            //panic("Unknown abort from I2C instance @%08x: %08x\n", (uint32_t) i2c->hw, abort_reason);
+            rval = PICO_ERROR_GENERIC;
+        }
+    } else {
+        rval = byte_ctr;
+    }
+
+    // nostop means we are now at the end of a *message* but not the end of a *transfer*
+    i2c->restart_on_next = nostop;
+    return rval;
+}
+
 int32_t ssd1306_i2c_read(ssd1306_i2c_device *device, uint8_t *buffer, uint32_t buffer_length)
 {
     return i2c_read_blocking(device->bus, device->address, buffer, buffer_length, false);
@@ -20,8 +170,8 @@ int32_t ssd1306_i2c_read(ssd1306_i2c_device *device, uint8_t *buffer, uint32_t b
 //     default:
 //         break;
 //     }
-// 
-// 
+//
+//
 // }
 
 int32_t ssd1306_i2c_initialize_device(ssd1306_i2c_device *device)
@@ -88,57 +238,56 @@ int32_t ssd1306_i2c_initialize_device(ssd1306_i2c_device *device)
 
 void ssd1306_i2c_set_display_enable(ssd1306_i2c_device *device, bool enable)
 {
-    uint8_t command[2] = {0x3C, OLED_SET_DISP};
+    uint8_t command[1] = {OLED_SET_DISP};
     if(enable) {
         // Enable display 0xAF
-        command[1] |= 0x01;
+        command[0] |= 0x01;
     }
-    ssd1306_i2c_write(device, command, sizeof(command));
+    ssd1306_i2c_write_command(device, command, sizeof(command));
 }
 
 void ssd1306_i2c_set_ignore_ram(ssd1306_i2c_device *device, bool enable)
 {
-    uint8_t command[2] = {0x3C, OLED_SET_ENTIRE_ON};
+    uint8_t command[1] = {OLED_SET_ENTIRE_ON};
     if(enable) {
         // Ignore RAM, all pixels on 0xA5
-        command[1] |= 0x01;
+        command[0] |= 0x01;
     }
-    ssd1306_i2c_write(device, command, sizeof(command));
+    ssd1306_i2c_write_command(device, command, sizeof(command));
 }
 
 void ssd1306_i2c_set_invert_display(ssd1306_i2c_device *device, bool invert)
 {
-    uint8_t command[2] = {0x3C, OLED_SET_NORM_INV};
+    uint8_t command[1] = {OLED_SET_NORM_INV};
     if(invert) {
         // Invert the display (0 = ON, 1 = OFF), all pixels on 0xA5
-        command[1] |= 0x01;
+        command[0] |= 0x01;
     }
-    ssd1306_i2c_write(device, command, sizeof(command));
+    ssd1306_i2c_write_command(device, command, sizeof(command));
 }
 
 void ssd1306_i2c_set_contrast(ssd1306_i2c_device *device, uint8_t contrast)
 {
     // Contrast is a 2 byte command
-    uint8_t command[3] = {0x3C, OLED_SET_CONTRAST, contrast};
-    ssd1306_i2c_write(device, command, sizeof(command));
+    uint8_t command[2] = {OLED_SET_CONTRAST, contrast};
+    ssd1306_i2c_write_command(device, command, sizeof(command));
 }
 
 void ssd1306_i2c_set_addressing(ssd1306_i2c_device *device, uint8_t mode)
 {
-    uint8_t init_addressing[3] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_MEM_ADDR, mode};
-    ssd1306_i2c_write(device, init_addressing, sizeof(init_addressing));
+    uint8_t command[2] = {OLED_SET_MEM_ADDR, mode};
+    ssd1306_i2c_write_command(device, command, sizeof(command));
 }
-
 
 void ssd1306_i2c_set_cursor(ssd1306_i2c_device *device, uint8_t start_col, uint8_t end_col, uint8_t start_page, uint8_t end_page)
 {
     // Indicates start column and end column
-    uint8_t init_col[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_COL_ADDR, start_col, end_col};
-    ssd1306_i2c_write(device, init_col, sizeof(init_col));
+    uint8_t init_col[] = {OLED_SET_COL_ADDR, start_col, end_col};
+    ssd1306_i2c_write_command(device, init_col, sizeof(init_col));
 
     // Indicates start page and end page
-    uint8_t init_page[] = {OLED_I2C_CONTROL_BYTE(0, 0), OLED_SET_PAGE_ADDR, start_page, end_page};
-    ssd1306_i2c_write(device, init_page, sizeof(init_page));
+    uint8_t init_page[] = {OLED_SET_PAGE_ADDR, start_page, end_page};
+    ssd1306_i2c_write_command(device, init_page, sizeof(init_page));
 }
 
 
@@ -150,9 +299,9 @@ void ssd1306_i2c_reset_cursor(ssd1306_i2c_device *device)
 void ssd1306_i2c_clear_display(ssd1306_i2c_device *device)
 {
     // Write the entire display RAM to 0
-    int8_t buffer[] = {OLED_I2C_CONTROL_BYTE(0, 1), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-    for(int32_t i = 0; i < OLED_PAGE_HEIGHT; i++) {
-        for(int32_t j = 0; j < 16; j++) {
+    uint8_t buffer[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    for(uint32_t i = 0; i < OLED_PAGE_HEIGHT; i++) {
+        for(uint32_t j = 0; j < 16; j++) {
             ssd1306_i2c_write(device, buffer, sizeof(buffer));
         }
     }

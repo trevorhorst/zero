@@ -2,18 +2,21 @@ cmake_minimum_required(VERSION 3.13)
 project(
     devices
     DESCRIPTION "Devices Project Library"
-    VERSION 0.1.3
+    VERSION 0.2.1
     LANGUAGES C CXX ASM
 )
 
 set( SOURCE
     ${SOURCE}
         src/application.c
-        )
+        src/resources.c
+        src/resources/sarah.bmp.s
+    )
 
 set( HEADERS
     ${HEADERS}
         include/project/application.h
+        include/project/resources.h
 )
 
 add_library(
@@ -40,6 +43,7 @@ target_link_libraries(
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
