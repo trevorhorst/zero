@@ -6,6 +6,7 @@
 #include "core/drivers/adxl345.h"
 #include "core/drivers/at24c.h"
 #include "core/drivers/ssd1306.h"
+#include "core/drivers/ssd1351.h"
 #include "core/logger.h"
 #include "core/tools/i2c.h"
 
@@ -13,12 +14,23 @@
 #include "project/resources.h"
 
 #include "hardware/i2c.h"
+#include "hardware/spi.h"
+
+// SPI Pins
+#define PIN_DISPLAY_DC  0   // DC
+#define PIN_SPI0_CSn    1   // CS
+#define PIN_SPI0_SCK    2   // CLK
+#define PIN_SPI0_MOSI   3   // DIN
+#define PIN_DISPLAY_RST 6   // RST
 
 // I2C Pins
 #define PIN_I2C1_SDA    4
 #define PIN_I2C1_SCL    5
 
 #define BUS_SPEED_KHZ(x) x * 1000
+
+#define RGB_OLED_WIDTH  128
+#define RGB_OLED_HEIGHT 128
 
 #define CMD_I2C     "scan"
 #define CMD_EEPROM  "eeprom"
@@ -28,11 +40,14 @@
 #define CMD_DISPLAY "display"
 #define CMD_DATA    "data"
 
+uint16_t rgb_oled_buffer[128 * 128 * 2] = {0x001F};
+
 uint32_t image_width_bytes  = OLED_HEIGHT;
 uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
 
 adxl345_i2c_device accelerometer;
 ssd1306_i2c_device display;
+ssd1351_spi_device oled;
 at24cxxx_i2c_device eeprom;
 
 void render_splash_screen()
@@ -69,6 +84,60 @@ void initialize_i2c(i2c_inst_t *bus)
     gpio_pull_up(PIN_I2C1_SCL);
 
     // tools_i2c_bus_scan(bus);
+}
+
+void initialize_spi(spi_inst_t *bus)
+{
+    LOG_INFO("Initializing SPI...\n");
+
+    // Initialize GPIO
+    gpio_set_function(PIN_SPI0_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SPI0_MOSI, GPIO_FUNC_SPI);
+
+    // Configure pin 0 for command/data on the display
+    gpio_init(PIN_DISPLAY_DC);
+    gpio_set_dir(PIN_DISPLAY_DC, GPIO_OUT);
+    gpio_put(PIN_DISPLAY_DC, 1);
+
+    // Configure pin 1 for chip select on the SPI
+    gpio_init(PIN_SPI0_CSn);
+    gpio_set_dir(PIN_SPI0_CSn, GPIO_OUT);
+    gpio_put(PIN_SPI0_CSn, 0);
+
+    // // Configure pin 4 for the busy line on the display
+    // gpio_init(PIN_DISPLAY_BUSY);
+    // gpio_set_dir(PIN_DISPLAY_BUSY, GPIO_IN);
+
+    // Configure pin 5 for chip select on the SPI
+    gpio_init(PIN_DISPLAY_RST);
+    gpio_set_dir(PIN_DISPLAY_RST, GPIO_OUT);
+    gpio_put(PIN_DISPLAY_RST, 1);
+
+
+    spi_init(bus, BUS_SPEED_KHZ(10000));
+    spi_set_format(
+        bus,
+        8,
+        SPI_CPOL_1,
+        SPI_CPHA_1,
+        SPI_MSB_FIRST
+    );
+}
+
+void initialize_oled(ssd1351_spi_device *device)
+{
+    LOG_INFO("Initializing OLED...\n");
+    device->cs = PIN_SPI0_CSn;
+    device->dc = PIN_DISPLAY_DC;
+    device->reset = PIN_DISPLAY_RST;
+    device->bus = spi0;
+
+    ssd1351_spi_initialize_device(device);
+
+    memset(rgb_oled_buffer, 0x55, 128 * 128 * 2);
+
+    ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 128 * 2);
+
 }
 
 void initialize_accelerometer(adxl345_i2c_device *device)
@@ -230,9 +299,11 @@ int32_t application_run()
     canvas_fill(&canvas, 0x00);
 
 
+    initialize_spi(spi0);
     initialize_i2c(i2c0);
     initialize_accelerometer(&accelerometer);
     initialize_display(&display);
+    initialize_oled(&oled);
     // initialize_eeprom(&eeprom);
 
 

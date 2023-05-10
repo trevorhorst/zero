@@ -17,6 +17,7 @@ set(SOURCE
     src/drivers/at24c.c
     src/drivers/sht3xdis.c
     src/drivers/ssd1306.c
+    src/drivers/ssd1351.c
     src/json/cjson.c
     src/logger.c
     src/tools/i2c.c
@@ -35,6 +36,7 @@ set(HEADERS
     include/core/drivers/at24c.h
     include/core/drivers/sht3xdis.h
     include/core/drivers/ssd1306.h
+    include/core/drivers/ssd1351.h
     include/core/json/cjson.h
     include/core/logger.h
     include/core/tools/i2c.h
