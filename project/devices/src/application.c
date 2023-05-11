@@ -39,8 +39,10 @@
 #define CMD_D32     "d32"
 #define CMD_DISPLAY "display"
 #define CMD_DATA    "data"
+#define CMD_FILL    "fill"
+#define CMD_CONTRAST    "contrast"
 
-uint16_t rgb_oled_buffer[128 * 128 * 2] = {0x001F};
+uint8_t rgb_oled_buffer[128 * 128 * 2] = {0x001F};
 
 uint32_t image_width_bytes  = OLED_HEIGHT;
 uint32_t image_height_bytes = (OLED_WIDTH % 8 == 0) ? (OLED_WIDTH / 8) : ((OLED_WIDTH / 8) + 1);
@@ -49,6 +51,29 @@ adxl345_i2c_device accelerometer;
 ssd1306_i2c_device display;
 ssd1351_spi_device oled;
 at24cxxx_i2c_device eeprom;
+
+typedef struct rgb_color_t {
+    uint16_t blue : 5;
+    uint16_t green : 6;
+    uint16_t red : 5;
+} rgb_color;
+
+typedef union color_t {
+    uint16_t color;
+    uint8_t byte[2];
+    rgb_color offset;
+} color;
+
+color color_table[8] = {
+    {.color = SSD1351_RGB_65K(0x1F, 0x3F, 0x1F)},
+    {.color = SSD1351_RGB_65K(0, 0, 0)},
+    {.color = SSD1351_RGB_65K(0x1F, 0x00, 0x00)},
+    {.color = SSD1351_RGB_65K(0x1F, 0x3F, 0x00)},
+    {.color = SSD1351_RGB_65K(0x00, 0x3F, 0x00)},
+    {.color = SSD1351_RGB_65K(0x00, 0x3F, 0x1F)},
+    {.color = SSD1351_RGB_65K(0x00, 0x00, 0x1F)},
+    {.color = SSD1351_RGB_65K(0x1F, 0x00, 0x1F)},
+};
 
 void render_splash_screen()
 {
@@ -114,7 +139,7 @@ void initialize_spi(spi_inst_t *bus)
     gpio_put(PIN_DISPLAY_RST, 1);
 
 
-    spi_init(bus, BUS_SPEED_KHZ(10000));
+    spi_init(bus, BUS_SPEED_KHZ(50000));
     spi_set_format(
         bus,
         8,
@@ -134,9 +159,31 @@ void initialize_oled(ssd1351_spi_device *device)
 
     ssd1351_spi_initialize_device(device);
 
-    memset(rgb_oled_buffer, 0x55, 128 * 128 * 2);
+    color c = {.color = SSD1351_RGB_65K(0x1F,0x3F,0x1F)};
+    LOG_INFO("color: 0x%02X\n", c.color);
 
+    // Clear the display!
+    memset(rgb_oled_buffer, 0x00, 128 * 128 * 2);
     ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 128 * 2);
+
+    // memset(rgb_oled_buffer, 0xFF, 128 * 128 * 2);
+    // ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 2);
+
+    // memset(rgb_oled_buffer, 0x03, 128 * 128 * 2);
+    // ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 2);
+    ssd1351_spi_reset_cursor(device);
+
+    for(size_t k = 0; k < 8; k++) {
+        c.color = color_table[k].color;
+        for(size_t j = 0; j < 16; j++) {
+            for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+                ssd1351_spi_write_data(device, (uint8_t*)&c.color, 2);
+            }
+        }
+    }
+
+    sleep_ms(2000);
+
 
 }
 
@@ -169,8 +216,8 @@ void initialize_display(ssd1306_i2c_device *device)
     ssd1306_i2c_reset_cursor(&display);
     ssd1306_i2c_set_addressing(&display, SSD1306_ADDRESSING_VERTICAL);
 
-    render_splash_screen();
-    sleep_ms(2000);
+    // render_splash_screen();
+    // sleep_ms(2000);
 
     ssd1306_i2c_clear_display(&display);
 }
@@ -277,6 +324,54 @@ uint32_t accelerometer_operation(int32_t argc, char **argv)
     return success;
 }
 
+uint32_t fill_operation(int32_t argc, char **argv)
+{
+    int16_t val = (int16_t)strtol(argv[2], NULL, 16);
+    if(argc == 3) {
+        LOG_INFO("arg %d\n", val);
+    } else {
+        return 1;
+    }
+
+    color c = {.color = val};
+    LOG_INFO("Sizeof color %d\n", sizeof(color));
+    LOG_INFO("color: 0x%02X\n", c.color);
+    LOG_INFO("  red: 0x%02X\n", c.offset.red);
+    LOG_INFO("  grn: 0x%02X\n", c.offset.green);
+    LOG_INFO("  blu: 0x%02X\n", c.offset.blue);
+
+    // // Clear the display!
+    // memset(rgb_oled_buffer, 0x00, 128 * 128 * 2);
+    // ssd1351_spi_write_data(&oled, rgb_oled_buffer, 128 * 128 * 2);
+
+    // memset(rgb_oled_buffer, 0xFF, 128 * 128 * 2);
+    // ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 2);
+
+    // memset(rgb_oled_buffer, 0x03, 128 * 128 * 2);
+    // ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 2);
+
+    for(size_t j = 0; j < RGB_OLED_HEIGHT; j++) {
+        for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+            ssd1351_spi_write_data(&oled, (uint8_t*)&c.color, 2);
+        }
+    }
+
+    return 0;
+}
+
+uint32_t contrast_operation(int32_t argc, char **argv)
+{
+    int16_t val = (int16_t)strtol(argv[2], NULL, 10);
+    if(argc == 3) {
+        LOG_INFO("arg %d\n", val);
+    } else {
+        return 1;
+    }
+
+    ssd1351_spi_set_contrast_master(&oled, val);
+
+    return 0;
+}
 
 int32_t application_run()
 {
@@ -325,12 +420,16 @@ int32_t application_run()
     struct console_command cmd_eeprom = {&eeprom_operation};
     struct console_command cmd_display = {&display_operation};
     struct console_command cmd_accelerometer = {&accelerometer_operation};
+    struct console_command cmd_fill = {&fill_operation};
+    struct console_command cmd_contrast = {&contrast_operation};
 
     console_initialize();
     console_add_command(CMD_I2C, &cmd_i2c);
     console_add_command(CMD_EEPROM, &cmd_eeprom);
     console_add_command(CMD_DISPLAY, &cmd_display);
     console_add_command(CMD_DATA, &cmd_accelerometer);
+    console_add_command(CMD_FILL, &cmd_fill);
+    console_add_command(CMD_CONTRAST, &cmd_contrast);
     multicore_launch_core1(&console_run);
 
     LOG_INFO("Devices Version: %s\n", DEVICES_VERSION);

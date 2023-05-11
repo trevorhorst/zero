@@ -6,7 +6,7 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 
-#define SSD1351_SET_COL ADDR        _u(0x15)
+#define SSD1351_SET_COL_ADDR        _u(0x15)
 #define SSD1351_SET_ROW_ADDR        _u(0x75)
 #define SSD1351_WRITE_RAM           _u(0x5C)
 #define SSD1351_READ_RAM            _u(0x5D)
@@ -31,8 +31,10 @@
 #define SSD1351_SET_MUX_RATIO       _u(0xCA)
 // Command Lock
 #define SSD1351_SET_CMD_LOCK        _u(0xFD)
-#define SSD1351_CMD_LOCK_LOCK       _u(0x12)
-#define SSD1351_CMD_LOCK_UNLOCK     _u(0x16)
+#define SSD1351_CMD_LOCK_UNLOCK     _u(0x12)
+#define SSD1351_CMD_LOCK_LOCK       _u(0x16)
+
+#define SSD1351_RGB_65K(R, G, B)    ((R & 0x1F) << 8) | ((B & 0x1F) << 3) | ((G & 0x7) << 13) | ((G & 0x38) >> 3)
 
 typedef enum ssd1351_write_type_t {
     SSD1351_COMMAND     = 0,
@@ -81,10 +83,14 @@ int32_t ssd1351_spi_write_data(ssd1351_spi_device *device,
                           const uint8_t *buffer, size_t buffer_length);
 int32_t ssd1351_spi_write_display(ssd1351_spi_device *device,
                           const uint8_t *buffer, size_t buffer_length);
+int32_t ssd1351_spi_write_cmd(ssd1351_spi_device *device, uint8_t cmd,
+                          const uint8_t *buffer, size_t buffer_length);
 
 void ssd1351_spi_initialize_device(ssd1351_spi_device *device);
 void ssd1351_spi_enable_display(ssd1351_spi_device *device, uint8_t enable);
 void ssd1351_spi_reset_device(ssd1351_spi_device *device);
+void ssd1351_spi_reset_cursor(ssd1351_spi_device *device);
+
 void ssd1351_spi_set_display_mode(ssd1351_spi_device *device, ssd1351_display_mode mode);
 void ssd1351_spi_set_command_lock(ssd1351_spi_device *device, uint8_t lock);
 void ssd1351_spi_set_clock_divider(ssd1351_spi_device *device, uint8_t div);
@@ -100,6 +106,9 @@ void ssd1351_spi_set_vcomh(ssd1351_spi_device *device, uint8_t vcomh);
 void ssd1351_spi_set_precharge_period(ssd1351_spi_device *device, uint8_t period);
 void ssd1351_spi_set_sleep_mode(ssd1351_spi_device *device, ssd1351_sleep_mode mode);
 void ssd1351_spi_set_write_ram(ssd1351_spi_device *device);
+void ssd1351_spi_set_display_start_line(ssd1351_spi_device *device, uint8_t start);
+void ssd1351_spi_set_column_address(ssd1351_spi_device *device, uint8_t column);
+void ssd1351_spi_set_row_address(ssd1351_spi_device *device, uint8_t row);
 
 
 #endif // SSD1351_H

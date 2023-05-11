@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     devices
     DESCRIPTION "Devices Project Library"
-    VERSION 0.2.1
+    VERSION 0.2.2
     LANGUAGES C CXX ASM
 )
 

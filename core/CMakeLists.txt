@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     core
     DESCRIPTION "RP2040 Core Library"
-    VERSION 0.4.2
+    VERSION 0.4.3
     LANGUAGES C ASM
 )
 
