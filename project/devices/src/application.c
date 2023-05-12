@@ -64,15 +64,26 @@ typedef union color_t {
     rgb_color offset;
 } color;
 
+typedef enum colors_t {
+   COLORS_WHITE  = 0,
+   COLORS_BLACK  = 1,
+   COLORS_RED    = 2,
+   COLORS_YELLOW = 3,
+   COLORS_GREEN  = 4,
+   COLORS_CYAN   = 5,
+   COLORS_BLUE   = 6,
+   COLORS_PURPLE = 7
+} colors;
+
 color color_table[8] = {
-    {.color = SSD1351_RGB_65K(0x1F, 0x3F, 0x1F)},
-    {.color = SSD1351_RGB_65K(0, 0, 0)},
-    {.color = SSD1351_RGB_65K(0x1F, 0x00, 0x00)},
-    {.color = SSD1351_RGB_65K(0x1F, 0x3F, 0x00)},
-    {.color = SSD1351_RGB_65K(0x00, 0x3F, 0x00)},
-    {.color = SSD1351_RGB_65K(0x00, 0x3F, 0x1F)},
-    {.color = SSD1351_RGB_65K(0x00, 0x00, 0x1F)},
-    {.color = SSD1351_RGB_65K(0x1F, 0x00, 0x1F)},
+    {.color = SSD1351_RGB_65K(0x1F, 0x3F, 0x1F)},   // White
+    {.color = SSD1351_RGB_65K(0x00, 0x00, 0x00)},   // Black
+    {.color = SSD1351_RGB_65K(0x1F, 0x00, 0x00)},   // Red
+    {.color = SSD1351_RGB_65K(0x1F, 0x3F, 0x00)},   // Yellow
+    {.color = SSD1351_RGB_65K(0x00, 0x3F, 0x00)},   // Green
+    {.color = SSD1351_RGB_65K(0x00, 0x3F, 0x1F)},   // Cyan
+    {.color = SSD1351_RGB_65K(0x00, 0x00, 0x1F)},   // Blue
+    {.color = SSD1351_RGB_65K(0x1F, 0x00, 0x1F)},   // Purple
 };
 
 void render_splash_screen()
@@ -149,6 +160,126 @@ void initialize_spi(spi_inst_t *bus)
     );
 }
 
+void display_color_bars(ssd1351_spi_device *device)
+{
+    color c = {.color = SSD1351_RGB_65K(0x1F,0x3F,0x1F)};
+    for(size_t k = 0; k < 8; k++) {
+        c.color = color_table[k].color;
+        for(size_t j = 0; j < 16; j++) {
+            for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+                ssd1351_spi_write_data(device, c.byte, 2);
+            }
+        }
+    }
+}
+
+void display_color_gradient(ssd1351_spi_device *device)
+{
+    bool ignore_step_1 = false;
+    bool ignore_step_2 = false;
+    bool ignore_step_3 = false;
+
+    uint16_t red   = SSD1351_RGB_RED_MAX;
+    uint16_t blue  = 0;
+    uint16_t green = 0;
+    color c = {.color = SSD1351_RGB_65K(red, blue, green)};
+    for(size_t i = 0; i < RGB_OLED_HEIGHT; i++) {
+        for(size_t j = 0; j < RGB_OLED_WIDTH; j++) {
+            ssd1351_spi_write_data(device, c.byte, 2);
+        }
+        if(!ignore_step_1) {
+            red = red - 1;
+            blue = blue + 1;
+            green = 0;
+            c.color = SSD1351_RGB_65K(red, green, blue);
+            if(red == 0) {
+                ignore_step_1 = true;
+            }
+        } else if(!ignore_step_2) {
+            red = 0;
+            if(i & 1) {
+                blue = blue - 1;
+            }
+            green = green + 1;
+            c.color = SSD1351_RGB_65K(red, green, blue);
+            if(blue == 0) {
+                ignore_step_2 = true;
+            }
+        } else if(!ignore_step_3) {
+            if(i & 1) {
+                red = red + 1;
+            }
+            blue = 0;
+            green = green - 1;
+            c.color = SSD1351_RGB_65K(red, green, blue);
+            if(green == 0) {
+                ignore_step_3 = true;
+            }
+        } else {
+            red = 0;
+            blue = 0;
+            green = 0;
+            c.color = SSD1351_RGB_65K(red, green, blue);
+        }
+    }
+
+    // for(size_t k = 0; k < 8; k++) {
+    //     c.color = color_table[k].color;
+    //     if(k == COLORS_RED) {
+    //         for(size_t j = 0; j < 16; j++) {
+    //             for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //                 ssd1351_spi_write_data(device, c.byte, 2);
+    //             }
+    //             // c.color = SSD1351_RGB_65K((SSD1351_RGB_RED_MAX - j), 0x00, 0x00);
+    //             c.color = SSD1351_RGB_65K(((SSD1351_RGB_RED_MAX - (j * 2))), 0x00, 0x00);
+    //             LOG_INFO("Red color: 0x%02X\n", c.color);
+    //         }
+    //     } else if(k == COLORS_GREEN) {
+    //         for(size_t j = 0; j < 16; j++) {
+    //             for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //                 ssd1351_spi_write_data(device, c.byte, 2);
+    //             }
+    //             c.color = SSD1351_RGB_65K(0x00, ((SSD1351_RGB_GRN_MAX - (j * 4))), 0x00);
+    //             LOG_INFO("Blue color: 0x%02X\n", c.color);
+    //         }
+
+    //     } else if(k == COLORS_YELLOW) {
+    //         for(size_t j = 0; j < 16; j++) {
+    //             for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //                 ssd1351_spi_write_data(device, c.byte, 2);
+    //             }
+    //             c.color = SSD1351_RGB_65K(((j * 2) + 1), 0x00, ((SSD1351_RGB_BLU_MAX - (j * 2))));
+    //             LOG_INFO("Blue color: 0x%02X\n", c.color);
+    //         }
+    //     } else if(k == COLORS_PURPLE) {
+    //         for(size_t j = 0; j < 16; j++) {
+    //             for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //                 ssd1351_spi_write_data(device, c.byte, 2);
+    //             }
+    //             c.color = SSD1351_RGB_65K(((j * 2) + 1), 0x00, ((SSD1351_RGB_BLU_MAX - (j * 2))));
+    //             LOG_INFO("Blue color: 0x%02X\n", c.color);
+    //         }
+
+
+    //     } else if(k == COLORS_BLUE) {
+    //         for(size_t j = 0; j < 16; j++) {
+    //             for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //                 ssd1351_spi_write_data(device, c.byte, 2);
+    //             }
+    //             c.color = SSD1351_RGB_65K(0x00, 0x00, ((SSD1351_RGB_BLU_MAX - (j * 2))));
+    //             LOG_INFO("Blue color: 0x%02X\n", c.color);
+    //         }
+
+    //     } else {
+    //         for(size_t j = 0; j < 16; j++) {
+    //             for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //                 ssd1351_spi_write_data(device, c.byte, 2);
+    //             }
+    //         }
+    //     }
+    // }
+}
+
 void initialize_oled(ssd1351_spi_device *device)
 {
     LOG_INFO("Initializing OLED...\n");
@@ -166,25 +297,24 @@ void initialize_oled(ssd1351_spi_device *device)
     memset(rgb_oled_buffer, 0x00, 128 * 128 * 2);
     ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 128 * 2);
 
+    /// display_color_bars(device);
+    display_color_gradient(device);
+
     // memset(rgb_oled_buffer, 0xFF, 128 * 128 * 2);
     // ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 2);
 
     // memset(rgb_oled_buffer, 0x03, 128 * 128 * 2);
     // ssd1351_spi_write_data(device, rgb_oled_buffer, 128 * 2);
-    ssd1351_spi_reset_cursor(device);
+    // ssd1351_spi_reset_cursor(device);
 
-    for(size_t k = 0; k < 8; k++) {
-        c.color = color_table[k].color;
-        for(size_t j = 0; j < 16; j++) {
-            for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
-                ssd1351_spi_write_data(device, (uint8_t*)&c.color, 2);
-            }
-        }
-    }
-
-    sleep_ms(2000);
-
-
+    // for(size_t k = 0; k < 8; k++) {
+    //     c.color = color_table[k].color;
+    //     for(size_t j = 0; j < 16; j++) {
+    //         for(size_t i = 0; i < RGB_OLED_WIDTH; i++) {
+    //             ssd1351_spi_write_data(device, c.byte, 2);
+    //         }
+    //     }
+    // }
 }
 
 void initialize_accelerometer(adxl345_i2c_device *device)

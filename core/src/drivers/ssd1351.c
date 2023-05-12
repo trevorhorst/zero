@@ -72,10 +72,11 @@ void ssd1351_spi_initialize_device(ssd1351_spi_device *device)
     // ssd1351_spi_set_phase_length(device, 0x32);
     // ssd1351_spi_set_vcomh(device, 0x05);
     ssd1351_spi_set_display_mode(device, SSD1351_DISPLAY_MODE_RESET);
-    ssd1351_spi_set_contrast(device, 0xC8, 0x80, 0xC8);
+    // ssd1351_spi_set_contrast(device, 0xC8, 0x80, 0xC8);
     // ssd1351_spi_set_contrast_master(device, 0x0F);
     // ssd1351_spi_set_svl(device);
     // ssd1351_spi_set_precharge_period(device, 0x01);
+    ssd1351_spi_reset_cursor(device);
     ssd1351_spi_enable_display(device, true);
 }
 

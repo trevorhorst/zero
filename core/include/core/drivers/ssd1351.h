@@ -35,6 +35,9 @@
 #define SSD1351_CMD_LOCK_LOCK       _u(0x16)
 
 #define SSD1351_RGB_65K(R, G, B)    ((R & 0x1F) << 8) | ((B & 0x1F) << 3) | ((G & 0x7) << 13) | ((G & 0x38) >> 3)
+#define SSD1351_RGB_RED_MAX 0x1F
+#define SSD1351_RGB_GRN_MAX 0x3F
+#define SSD1351_RGB_BLU_MAX 0x1F
 
 typedef enum ssd1351_write_type_t {
     SSD1351_COMMAND     = 0,
