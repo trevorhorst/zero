@@ -48,10 +48,12 @@ int32_t ssd1351_spi_write_cmd(ssd1351_spi_device *device, uint8_t cmd,
     // Write the command
     int32_t bytes = spi_write_blocking(device->bus, &cmd, 1);
 
-    // Configure for data
-    gpio_put(device->dc, SSD1351_DATA);
+    if(buffer) {
+        // Configure for data
+        gpio_put(device->dc, SSD1351_DATA);
 
-    bytes = spi_write_blocking(device->bus, buffer, buffer_length);
+        bytes = spi_write_blocking(device->bus, buffer, buffer_length);
+    }
 
     // Take chip select low
     gpio_put(device->cs, 1);
@@ -199,8 +201,7 @@ void ssd1351_spi_set_sleep_mode(ssd1351_spi_device *device, ssd1351_sleep_mode m
 
 void ssd1351_spi_set_write_ram(ssd1351_spi_device *device)
 {
-    uint8_t command[] = {SSD1351_WRITE_RAM};
-    ssd1351_spi_write_command(device, command, sizeof(command));
+    ssd1351_spi_write_cmd(device, SSD1351_WRITE_RAM, NULL, 0);
 }
 
 void ssd1351_spi_set_display_start_line(ssd1351_spi_device *device, uint8_t start)

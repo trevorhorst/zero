@@ -3,8 +3,10 @@
 
 #include <stdint.h>
 
+#define CONSOLE_UNUSED_ARGS(AC, A)   (void)AC; (void)A;
+
 struct console_command {
-    uint32_t (*callback)(int32_t, char **);
+    int32_t (*callback)(int32_t, char **);
 };
 
 void console_initialize();

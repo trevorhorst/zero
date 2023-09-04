@@ -45,7 +45,7 @@ void console_evaluate(char *input, const size_t length)
             arguments++;
             parsed[arguments] = &input[i + 1];
         } else if(input[i] == '\0') {
-            // We are done parsing 
+            // We are done parsing
             arguments++;
             done = true;
         }
@@ -57,9 +57,9 @@ void console_evaluate(char *input, const size_t length)
     //     }
     // }
 
-    if(arguments & 1) {
-        // We should have an odd number of arguments, 1 command value and each
-        // parameter is paired with a value
+    // We should have an odd number of arguments, 1 command value and each
+    // parameter is paired with a value
+    // if(arguments & 1) {
         if(parsed[0]) {
             // The first element of our parsed input is assumed to be our command
             struct console_command *cmd = (struct console_command*)hash_table_get(&command_map, parsed[0]);
@@ -67,10 +67,9 @@ void console_evaluate(char *input, const size_t length)
                 cmd->callback(arguments, parsed);
             }
         }
-    } else {
-        LOG_INFO("Parameter mismatch\n");
-    }
-
+    // } else {
+    //     LOG_INFO("Parameter mismatch\n");
+    // }
 }
 
 void console_initialize()
