@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     core
     DESCRIPTION "RP2040 Core Library"
-    VERSION 0.4.4
+    VERSION 0.5.0
     LANGUAGES C ASM
 )
 
@@ -18,6 +18,7 @@ set(SOURCE
     src/drivers/sht3xdis.c
     src/drivers/ssd1306.c
     src/drivers/ssd1351.c
+    src/drivers/ws2812.c
     src/json/cjson.c
     src/logger.c
     src/tools/i2c.c
@@ -37,6 +38,8 @@ set(HEADERS
     include/core/drivers/sht3xdis.h
     include/core/drivers/ssd1306.h
     include/core/drivers/ssd1351.h
+    include/core/drivers/ws2812.h
+    include/core/drivers/pio/ws2812.pio.h
     include/core/json/cjson.h
     include/core/logger.h
     include/core/tools/i2c.h
@@ -53,13 +56,6 @@ add_library(
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC CORE_VERSION="${PROJECT_VERSION}")
 
-# pico_generate_pio_header(
-#     ${PROJECT_NAME}
-#         ${CMAKE_CURRENT_LIST_DIR}/pio/ws2812.pio
-#     UTPUT_DIR
-#         ${CMAKE_CURRENT_LIST_DIR}/generated
-# )
-
 target_link_libraries(
     ${PROJECT_NAME}
     PUBLIC
@@ -68,6 +64,13 @@ target_link_libraries(
         hardware_i2c
         hardware_pio
     )
+
+pico_generate_pio_header(
+    ${PROJECT_NAME}
+        ${CMAKE_CURRENT_LIST_DIR}/pio/ws2812.pio
+    UTPUT_DIR
+        ${CMAKE_CURRENT_LIST_DIR}/generated
+)
 
 # Specifies include directories to use when compiling a given target
 target_include_directories(
