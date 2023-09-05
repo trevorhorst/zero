@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(
     core
     DESCRIPTION "RP2040 Core Library"
-    VERSION 0.5.0
+    VERSION 0.5.1
     LANGUAGES C ASM
 )
 
@@ -15,6 +15,7 @@ set(SOURCE
     src/draw/canvas.c
     src/drivers/adxl345.c
     src/drivers/at24c.c
+    src/drivers/enc28j60.c
     src/drivers/sht3xdis.c
     src/drivers/ssd1306.c
     src/drivers/ssd1351.c
@@ -35,6 +36,7 @@ set(HEADERS
     include/core/draw/canvas.h
     include/core/drivers/adxl345.h
     include/core/drivers/at24c.h
+    include/core/drivers/enc28j60.h
     include/core/drivers/sht3xdis.h
     include/core/drivers/ssd1306.h
     include/core/drivers/ssd1351.h
