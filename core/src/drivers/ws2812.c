@@ -7,6 +7,8 @@
 void ws2812_initialize(ws2812_device *device)
 {
     device->data = (uint32_t*)malloc(sizeof(uint32_t) * device->length);
+
+    // Configure the PIO program
     uint offset = pio_add_program(device->pio, &ws2812_program);
     ws2812_program_init(device->pio, device->sm, offset, device->pin, 800000, true);
 }
