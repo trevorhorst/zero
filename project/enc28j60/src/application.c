@@ -54,30 +54,6 @@ void initialize_neopixel(ws2812_device *device)
     ws2812_show(device);
 }
 
-void initialize_ethernet_controller(enc28j60_spi_device *device)
-{
-    LOG_INFO("Initialize Ethernet Controller\n");
-    uint8_t value = 0;
-
-    // Initialize device settings
-    device->bus = spi0;
-    device->cs = PIN_SPI0_CS;
-    device->reset = PIN_ETHCTL_RESET;
-
-    spi_init(spi0, UNIT_MHZ(10));
-    spi_set_format(
-        spi0,
-        8,
-        SPI_CPOL_1,
-        SPI_CPHA_1,
-        SPI_MSB_FIRST
-    );
-
-    enc28j60_spi_read(device, ECON1, &value, sizeof(value));
-
-    LOG_INFO("READ: 0x%04X\n", value);
-}
-
 uint32_t spi_reset(int32_t argc, char **argv)
 {
     uint32_t error = 0;
@@ -85,6 +61,27 @@ uint32_t spi_reset(int32_t argc, char **argv)
     gpio_put(PIN_ETHCTL_RESET, 0);
     sleep_ms(1000);
     gpio_put(PIN_ETHCTL_RESET, 1);
+    return error;
+}
+
+uint32_t spi_dump(int32_t argc, char **argv)
+{
+    uint32_t error = 0;
+    if(argc == 3) {
+        // We are performing a read operation
+        long bank = strtol(argv[2], NULL, 16);
+        if(errno == ERANGE) {
+            return 1;
+        }
+
+        uint8_t value = 0;
+        enc28j60_set_bank(&ethernet_controller, bank);
+        for(uint8_t i = 0; i < 32; i++) {
+            enc28j60_spi_read(&ethernet_controller, i, &value, sizeof(value));
+            LOG_INFO("[0x%02X] --> 0x%02X\n", i, value);
+        }
+        // LOG_INFO("READ: 0x%04X\n", value);
+    }
     return error;
 }
 
@@ -126,9 +123,57 @@ uint32_t spi_write(int32_t argc, char **argv)
     return error;
 }
 
+uint32_t phy_read(int32_t argc, char **argv)
+{
+    uint32_t error = 0;
+    LOG_INFO("Read args: %d\n", argc);
+    if(argc == 3) {
+        // We are performing a read operation
+        long address = strtol(argv[2], NULL, 16);
+        if(errno == ERANGE) {
+            return 1;
+        }
+
+        uint16_t value = enc28j60_spi_read_phy(&ethernet_controller, address);
+        LOG_INFO("READ: 0x%04X\n", value);
+    }
+
+    return error;
+}
+
+void initialize_ethernet_controller(enc28j60_spi_device *device)
+{
+    LOG_INFO("Initialize Ethernet Controller\n");
+
+    // Initialize device settings
+    device->bus = spi0;
+    device->cs = PIN_SPI0_CS;
+    device->reset = PIN_ETHCTL_RESET;
+
+    spi_init(spi0, UNIT_MHZ(10));
+    spi_set_format(
+        spi0,
+        8,
+        SPI_CPOL_1,
+        SPI_CPHA_1,
+        SPI_MSB_FIRST
+    );
+
+    spi_reset(0, NULL);
+
+    uint8_t mac_address[6] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB};
+    enc28j60_hw_disable(device);
+    enc28j20_initialize(device);
+    enc28j60_set_mac(device, mac_address);
+    enc28j60_hw_enable(device);
+    enc28j60_check_link_status(device);
+}
+
+#define CMD_DUMP        "dump"
 #define CMD_SPI_READ    "read"
 #define CMD_SPI_WRITE   "write"
 #define CMD_SPI_RESET   "reset"
+#define CMD_PHY_READ    "phyr"
 
 int32_t application_run()
 {
@@ -148,15 +193,19 @@ int32_t application_run()
     LOG_INFO("ENC28J60 Version: %s\n", ENC28J60_VERSION);
     LOG_INFO("  Common Version: %s\n", CORE_VERSION);
 
+    struct console_command cmd_spi_dump = {&spi_dump};
     struct console_command cmd_spi_read = {&spi_read};
     struct console_command cmd_spi_write = {&spi_write};
     struct console_command cmd_spi_reset = {&spi_reset};
+    struct console_command cmd_phy_read = {&phy_read};
 
     // Initialize and launch the console on second core
     console_initialize();
+    console_add_command(CMD_DUMP, &cmd_spi_dump);
     console_add_command(CMD_SPI_READ, &cmd_spi_read);
     console_add_command(CMD_SPI_WRITE, &cmd_spi_write);
     console_add_command(CMD_SPI_RESET, &cmd_spi_reset);
+    console_add_command(CMD_PHY_READ, &cmd_phy_read);
     multicore_launch_core1(&console_run);
 
     // Main thread loop
