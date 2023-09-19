@@ -55,23 +55,23 @@ int32_t enc28j20_initialize(enc28j60_spi_device *device)
     enc28j60_spi_write_control(device, MAMXFLL, (uint8_t)(MAX_FRAMELEN >> 0));
     enc28j60_spi_write_control(device, MAMXFLL, (uint8_t)(MAX_FRAMELEN >> 8));
 
-    // PHY Initialization
-    LOG_INFO("  Initialize PHY\n");
-    if(full_duplex) {
-        if(!enc28j60_spi_write_phy(device, PHCON1, PHCON1_PDPXMD)) {
-            return 0;
-        }
-        if(!enc28j60_spi_write_phy(device, PHCON2, 0x00)) {
-            return 0;
-        }
-    } else {
-        if(!enc28j60_spi_write_phy(device, PHCON1, 0x00)) {
-            return 0;
-        }
-        if(!enc28j60_spi_write_phy(device, PHCON2, PHCON2_HDLDIS)) {
-            return 0;
-        }
-    }
+    // // PHY Initialization
+    // LOG_INFO("  Initialize PHY\n");
+    // if(full_duplex) {
+    //     if(!enc28j60_spi_write_phy(device, PHCON1, PHCON1_PDPXMD)) {
+    //         return 0;
+    //     }
+    //     if(!enc28j60_spi_write_phy(device, PHCON2, 0x00)) {
+    //         return 0;
+    //     }
+    // } else {
+    //     if(!enc28j60_spi_write_phy(device, PHCON1, 0x00)) {
+    //         return 0;
+    //     }
+    //     if(!enc28j60_spi_write_phy(device, PHCON2, PHCON2_HDLDIS)) {
+    //         return 0;
+    //     }
+    // }
 
     return 1;
 }
@@ -245,7 +245,9 @@ int16_t enc28j60_spi_read_phy(enc28j60_spi_device *device, uint8_t reg)
 
     // enc28j60_set_bank(device, 2);
     enc28j60_spi_read(device, MIRDL, &rl, sizeof(rl));
+    LOG_INFO("READ PHY LO: %02X\n", rl);
     enc28j60_spi_read(device, MIRDH, &rh, sizeof(rh));
+    LOG_INFO("READ PHY HI: %02X\n", rh);
 
     uint16_t value = ((uint16_t)rh << 8) | (uint16_t)rl;
     return value;

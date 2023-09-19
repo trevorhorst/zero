@@ -154,8 +154,8 @@ void initialize_ethernet_controller(enc28j60_spi_device *device)
     spi_set_format(
         spi0,
         8,
-        SPI_CPOL_1,
-        SPI_CPHA_1,
+        SPI_CPOL_0,
+        SPI_CPHA_0,
         SPI_MSB_FIRST
     );
 
