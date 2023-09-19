@@ -6,168 +6,120 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 
-// Bank 0 Registers
-#define ERDPTL     _u(0x00)
-#define ERDPTH     _u(0x01)
-#define EWRPTL     _u(0x02)
-#define EWRPTH     _u(0x03)
-#define ETXSTL     _u(0x04)
-#define ETXSTH     _u(0x05)
-#define ETXNDL     _u(0x06)
-#define ETXNDH     _u(0x07)
-#define ERXSTL     _u(0x08)
-#define ERXSTH     _u(0x09)
-#define ERXNDL     _u(0x0A)
-#define ERXNDH     _u(0x0B)
-#define ERXRDPTL   _u(0x0C)
-#define ERXRDPTH   _u(0x0D)
-#define ERXWRPTL   _u(0x0E)
-#define ERXWRPTH   _u(0x0F)
-#define EDMASTL    _u(0x10)
-#define EDMASTH    _u(0x11)
-#define EDMANDL    _u(0x12)
-#define EDMANDH    _u(0x13)
-#define EDMADSTL   _u(0x14)
-#define EDMADSTH   _u(0x15)
-#define EDMACSL    _u(0x16)
-#define EDMACSH    _u(0x17)
-// #define —          _u(0x18)
-// #define —          _u(0x19)
-#define Reserved   _u(0x1A)
-#define EIE        _u(0x1B)
-#define EIR        _u(0x1C)
-#define ESTAT      _u(0x1D)
-#define ECON2      _u(0x1E)
-#define ECON1      _u(0x1F)
-
-// Bank 1 Registers
-#define EHT0       _u(0x00)
-#define EHT1       _u(0x01)
-#define EHT2       _u(0x02)
-#define EHT3       _u(0x03)
-#define EHT4       _u(0x04)
-#define EHT5       _u(0x05)
-#define EHT6       _u(0x06)
-#define EHT7       _u(0x07)
-#define EPMM0      _u(0x08)
-#define EPMM1      _u(0x09)
-#define EPMM2      _u(0x0A)
-#define EPMM3      _u(0x0B)
-#define EPMM4      _u(0x0C)
-#define EPMM5      _u(0x0D)
-#define EPMM6      _u(0x0E)
-#define EPMM7      _u(0x0F)
-#define EPMCSL     _u(0x10)
-#define EPMCSH     _u(0x11)
-// #define —          _u(0x12)
-// #define —          _u(0x13)
-#define EPMOL      _u(0x14)
-#define EPMOH      _u(0x15)
-// #define Reserved   _u(0x16)
-// #define Reserved   _u(0x17)
-#define ERXFCON    _u(0x18)
-#define EPKTCNT    _u(0x19)
-// #define Reserved   _u(0x1A)
-#define EIE        _u(0x1B)
-#define EIR        _u(0x1C)
-#define ESTAT      _u(0x1D)
-#define ECON2      _u(0x1E)
-#define ECON1      _u(0x1F)
-
-// Bank 2 Registers
-#define MACON1    _u(0x00)
-// #define Reserved  _u(0x01)
-#define MACON3    _u(0x02)
-#define MACON4    _u(0x03)
-#define MABBIPG   _u(0x04)
-// #define —         _u(0x05)
-#define MAIPGL    _u(0x06)
-#define MAIPGH    _u(0x07)
-#define MACLCON1  _u(0x08)
-#define MACLCON2  _u(0x09)
-#define MAMXFLL   _u(0x0A)
-#define MAMXFLH   _u(0x0B)
-// #define Reserved  _u(0x0C)
-// #define Reserved  _u(0x0D)
-// #define Reserved  _u(0x0E)
-// #define —         _u(0x0F)
-// #define Reserved  _u(0x10)
-// #define Reserved  _u(0x11)
-#define MICMD     _u(0x12)
-// #define —         _u(0x13)
-#define MIREGADR  _u(0x14)
-// #define Reserved  _u(0x15)
-#define MIWRL     _u(0x16)
-#define MIWRH     _u(0x17)
-#define MIRDL     _u(0x18)
-#define MIRDH     _u(0x19)
-// #define Reserved  _u(0x1A)
-#define EIE       _u(0x1B)
-#define EIR       _u(0x1C)
-#define ESTAT     _u(0x1D)
-#define ECON2     _u(0x1E)
-#define ECON1     _u(0x1F)
-
-// Bank 3 Registers
-#define MAADR5     _u(0x00)
-#define MAADR6     _u(0x01)
-#define MAADR3     _u(0x02)
-#define MAADR4     _u(0x03)
-#define MAADR1     _u(0x04)
-#define MAADR2     _u(0x05)
-#define EBSTSD     _u(0x06)
-#define EBSTCON    _u(0x07)
-#define EBSTCSL    _u(0x08)
-#define EBSTCSH    _u(0x09)
-#define MISTAT     _u(0x0A)
-// #define —          _u(0x0B)
-// #define —          _u(0x0C)
-// #define —          _u(0x0D)
-// #define —          _u(0x0E)
-// #define —          _u(0x0F)
-// #define —          _u(0x10)
-// #define —          _u(0x11)
-#define EREVID     _u(0x12)
-// #define —          _u(0x13)
-// #define —          _u(0x14)
-#define ECOCON     _u(0x15)
-// #define Reserved   _u(0x16)
-#define EFLOCON    _u(0x17)
-#define EPAUSL     _u(0x18)
-#define EPAUSH     _u(0x19)
-// #define Reserved   _u(0x1A)
-#define EIE        _u(0x1B)
-#define EIR        _u(0x1C)
-#define ESTAT      _u(0x1D)
-#define ECON2      _u(0x1E)
-#define ECON1      _u(0x1F)
-
+/*
+ * ENC28J60 Control Registers
+ * Control register definitions are a combination of address,
+ * bank number, and Ethernet/MAC/PHY indicator bits.
+ * - Register address	(bits 0-4)
+ * - Bank number	(bits 5-6)
+ * - MAC/MII indicator	(bit 7)
+ */
+#define ADDR_MASK	0x1F
+#define BANK_MASK	0x60
+#define SPRD_MASK	0x80
+/* All-bank registers */
+#define EIE		0x1B
+#define EIR		0x1C
+#define ESTAT		0x1D
+#define ECON2		0x1E
+#define ECON1		0x1F
+/* Bank 0 registers */
+#define ERDPTL		(0x00|0x00)
+#define ERDPTH		(0x01|0x00)
+#define EWRPTL		(0x02|0x00)
+#define EWRPTH		(0x03|0x00)
+#define ETXSTL		(0x04|0x00)
+#define ETXSTH		(0x05|0x00)
+#define ETXNDL		(0x06|0x00)
+#define ETXNDH		(0x07|0x00)
+#define ERXSTL		(0x08|0x00)
+#define ERXSTH		(0x09|0x00)
+#define ERXNDL		(0x0A|0x00)
+#define ERXNDH		(0x0B|0x00)
+#define ERXRDPTL	(0x0C|0x00)
+#define ERXRDPTH	(0x0D|0x00)
+#define ERXWRPTL	(0x0E|0x00)
+#define ERXWRPTH	(0x0F|0x00)
+#define EDMASTL		(0x10|0x00)
+#define EDMASTH		(0x11|0x00)
+#define EDMANDL		(0x12|0x00)
+#define EDMANDH		(0x13|0x00)
+#define EDMADSTL	(0x14|0x00)
+#define EDMADSTH	(0x15|0x00)
+#define EDMACSL		(0x16|0x00)
+#define EDMACSH		(0x17|0x00)
+/* Bank 1 registers */
+#define EHT0		(0x00|0x20)
+#define EHT1		(0x01|0x20)
+#define EHT2		(0x02|0x20)
+#define EHT3		(0x03|0x20)
+#define EHT4		(0x04|0x20)
+#define EHT5		(0x05|0x20)
+#define EHT6		(0x06|0x20)
+#define EHT7		(0x07|0x20)
+#define EPMM0		(0x08|0x20)
+#define EPMM1		(0x09|0x20)
+#define EPMM2		(0x0A|0x20)
+#define EPMM3		(0x0B|0x20)
+#define EPMM4		(0x0C|0x20)
+#define EPMM5		(0x0D|0x20)
+#define EPMM6		(0x0E|0x20)
+#define EPMM7		(0x0F|0x20)
+#define EPMCSL		(0x10|0x20)
+#define EPMCSH		(0x11|0x20)
+#define EPMOL		(0x14|0x20)
+#define EPMOH		(0x15|0x20)
+#define EWOLIE		(0x16|0x20)
+#define EWOLIR		(0x17|0x20)
+#define ERXFCON		(0x18|0x20)
+#define EPKTCNT		(0x19|0x20)
+/* Bank 2 registers */
+#define MACON1		(0x00|0x40|SPRD_MASK)
+/* #define MACON2	(0x01|0x40|SPRD_MASK) */
+#define MACON3		(0x02|0x40|SPRD_MASK)
+#define MACON4		(0x03|0x40|SPRD_MASK)
+#define MABBIPG		(0x04|0x40|SPRD_MASK)
+#define MAIPGL		(0x06|0x40|SPRD_MASK)
+#define MAIPGH		(0x07|0x40|SPRD_MASK)
+#define MACLCON1	(0x08|0x40|SPRD_MASK)
+#define MACLCON2	(0x09|0x40|SPRD_MASK)
+#define MAMXFLL		(0x0A|0x40|SPRD_MASK)
+#define MAMXFLH		(0x0B|0x40|SPRD_MASK)
+#define MAPHSUP		(0x0D|0x40|SPRD_MASK)
+#define MICON		(0x11|0x40|SPRD_MASK)
+#define MICMD		(0x12|0x40|SPRD_MASK)
+#define MIREGADR	(0x14|0x40|SPRD_MASK)
+#define MIWRL		(0x16|0x40|SPRD_MASK)
+#define MIWRH		(0x17|0x40|SPRD_MASK)
+#define MIRDL		(0x18|0x40|SPRD_MASK)
+#define MIRDH		(0x19|0x40|SPRD_MASK)
+/* Bank 3 registers */
+#define MAADR1		(0x00|0x60|SPRD_MASK)
+#define MAADR0		(0x01|0x60|SPRD_MASK)
+#define MAADR3		(0x02|0x60|SPRD_MASK)
+#define MAADR2		(0x03|0x60|SPRD_MASK)
+#define MAADR5		(0x04|0x60|SPRD_MASK)
+#define MAADR4		(0x05|0x60|SPRD_MASK)
+#define EBSTSD		(0x06|0x60)
+#define EBSTCON		(0x07|0x60)
+#define EBSTCSL		(0x08|0x60)
+#define EBSTCSH		(0x09|0x60)
+#define MISTAT		(0x0A|0x60|SPRD_MASK)
+#define EREVID		(0x12|0x60)
+#define ECOCON		(0x15|0x60)
+#define EFLOCON		(0x17|0x60)
+#define EPAUSL		(0x18|0x60)
+#define EPAUSH		(0x19|0x60)
 /* PHY registers */
-#define PHCON1  0x00
-#define PHSTAT1 0x01
-#define PHHID1  0x02
-#define PHHID2  0x03
-#define PHCON2  0x10
-#define PHSTAT2 0x11
-#define PHIE    0x12
-#define PHIR    0x13
-#define PHLCON  0x14
-
-#define WS2812_BANK0    0x0
-#define WS2812_BANK1    0x1
-#define WS2812_BANK2    0x2
-#define WS2812_BANK3    0x3
-
-/* buffer boundaries applied to internal 8K ram
- * entire available packet buffer space is allocated.
- * Give TX buffer space for one full ethernet frame (~1500 bytes)
- * receive buffer gets the rest */
-#define WS2812_TXSTART_INIT	    0x1A00
-#define WS2812_TXEND_INIT       0x1FFF
-
-/* Put RX buffer at 0 as suggested by the Errata datasheet */
-#define WS2812_RXSTART_INIT     0x0000
-#define WS2812_RXEND_INIT       0x19FF
+#define PHCON1		0x00
+#define PHSTAT1		0x01
+#define PHHID1		0x02
+#define PHHID2		0x03
+#define PHCON2		0x10
+#define PHSTAT2		0x11
+#define PHIE		0x12
+#define PHIR		0x13
+#define PHLCON		0x14
 
 /* ENC28J60 EIE Register Bit Definitions */
 #define EIE_INTIE	0x80
@@ -186,6 +138,17 @@
 /* #define EIR_WOLIF	0x04 (reserved) */
 #define EIR_TXERIF	0x02
 #define EIR_RXERIF	0x01
+/* ENC28J60 ESTAT Register Bit Definitions */
+#define ESTAT_INT	0x80
+#define ESTAT_LATECOL	0x10
+#define ESTAT_RXBUSY	0x04
+#define ESTAT_TXABRT	0x02
+#define ESTAT_CLKRDY	0x01
+/* ENC28J60 ECON2 Register Bit Definitions */
+#define ECON2_AUTOINC	0x80
+#define ECON2_PKTDEC	0x40
+#define ECON2_PWRSV	0x20
+#define ECON2_VRPS	0x08
 /* ENC28J60 ECON1 Register Bit Definitions */
 #define ECON1_TXRST	0x80
 #define ECON1_RXRST	0x40
@@ -195,29 +158,28 @@
 #define ECON1_RXEN	0x04
 #define ECON1_BSEL1	0x02
 #define ECON1_BSEL0	0x01
-
 /* ENC28J60 MACON1 Register Bit Definitions */
-#define MACON1_LOOPBK   0x10
-#define MACON1_TXPAUS   0x08
-#define MACON1_RXPAUS   0x04
-#define MACON1_PASSALL  0x02
-#define MACON1_MARXEN   0x01
+#define MACON1_LOOPBK	0x10
+#define MACON1_TXPAUS	0x08
+#define MACON1_RXPAUS	0x04
+#define MACON1_PASSALL	0x02
+#define MACON1_MARXEN	0x01
 /* ENC28J60 MACON2 Register Bit Definitions */
-#define MACON2_MARST    0x80
-#define MACON2_RNDRST   0x40
-#define MACON2_MARXRST  0x08
-#define MACON2_RFUNRST  0x04
-#define MACON2_MATXRST  0x02
-#define MACON2_TFUNRST  0x01
+#define MACON2_MARST	0x80
+#define MACON2_RNDRST	0x40
+#define MACON2_MARXRST	0x08
+#define MACON2_RFUNRST	0x04
+#define MACON2_MATXRST	0x02
+#define MACON2_TFUNRST	0x01
 /* ENC28J60 MACON3 Register Bit Definitions */
-#define MACON3_PADCFG2  0x80
-#define MACON3_PADCFG1  0x40
-#define MACON3_PADCFG0  0x20
-#define MACON3_TXCRCEN  0x10
-#define MACON3_PHDRLEN  0x08
-#define MACON3_HFRMLEN  0x04
-#define MACON3_FRMLNEN  0x02
-#define MACON3_FULDPX   0x01
+#define MACON3_PADCFG2	0x80
+#define MACON3_PADCFG1	0x40
+#define MACON3_PADCFG0	0x20
+#define MACON3_TXCRCEN	0x10
+#define MACON3_PHDRLEN	0x08
+#define MACON3_HFRMLEN	0x04
+#define MACON3_FRMLNEN	0x02
+#define MACON3_FULDPX	0x01
 /* ENC28J60 MICMD Register Bit Definitions */
 #define MICMD_MIISCAN	0x02
 #define MICMD_MIIRD	0x01
@@ -226,14 +188,14 @@
 #define MISTAT_SCAN	0x02
 #define MISTAT_BUSY	0x01
 /* ENC28J60 ERXFCON Register Bit Definitions */
-#define ERXFCON_UCEN    0x80
-#define ERXFCON_ANDOR   0x40
-#define ERXFCON_CRCEN   0x20
-#define ERXFCON_PMEN    0x10
-#define ERXFCON_MPEN    0x08
-#define ERXFCON_HTEN    0x04
-#define ERXFCON_MCEN    0x02
-#define ERXFCON_BCEN    0x01
+#define ERXFCON_UCEN	0x80
+#define ERXFCON_ANDOR	0x40
+#define ERXFCON_CRCEN	0x20
+#define ERXFCON_PMEN	0x10
+#define ERXFCON_MPEN	0x08
+#define ERXFCON_HTEN	0x04
+#define ERXFCON_MCEN	0x02
+#define ERXFCON_BCEN	0x01
 
 /* ENC28J60 PHY PHCON1 Register Bit Definitions */
 #define PHCON1_PRST	0x8000
@@ -264,31 +226,101 @@
 #define PHIR_PLNKIF	(1 << 4)
 #define PHIR_PGEIF	(1 << 1)
 
+/* ENC28J60 Packet Control Byte Bit Definitions */
+#define PKTCTRL_PHUGEEN		0x08
+#define PKTCTRL_PPADEN		0x04
+#define PKTCTRL_PCRCEN		0x02
+#define PKTCTRL_POVERRIDE	0x01
+
+/* ENC28J60 Transmit Status Vector */
+#define TSV_TXBYTECNT		0
+#define TSV_TXCOLLISIONCNT	16
+#define TSV_TXCRCERROR		20
+#define TSV_TXLENCHKERROR	21
+#define TSV_TXLENOUTOFRANGE	22
+#define TSV_TXDONE		23
+#define TSV_TXMULTICAST		24
+#define TSV_TXBROADCAST		25
+#define TSV_TXPACKETDEFER	26
+#define TSV_TXEXDEFER		27
+#define TSV_TXEXCOLLISION	28
+#define TSV_TXLATECOLLISION	29
+#define TSV_TXGIANT		30
+#define TSV_TXUNDERRUN		31
+#define TSV_TOTBYTETXONWIRE	32
+#define TSV_TXCONTROLFRAME	48
+#define TSV_TXPAUSEFRAME	49
+#define TSV_BACKPRESSUREAPP	50
+#define TSV_TXVLANTAGFRAME	51
+
+#define TSV_SIZE		7
+#define TSV_BYTEOF(x)		((x) / 8)
+#define TSV_BITMASK(x)		(1 << ((x) % 8))
+#define TSV_GETBIT(x, y)	(((x)[TSV_BYTEOF(y)] & TSV_BITMASK(y)) ? 1 : 0)
+
+/* ENC28J60 Receive Status Vector */
+#define RSV_RXLONGEVDROPEV	16
+#define RSV_CARRIEREV		18
+#define RSV_CRCERROR		20
+#define RSV_LENCHECKERR		21
+#define RSV_LENOUTOFRANGE	22
+#define RSV_RXOK		23
+#define RSV_RXMULTICAST		24
+#define RSV_RXBROADCAST		25
+#define RSV_DRIBBLENIBBLE	26
+#define RSV_RXCONTROLFRAME	27
+#define RSV_RXPAUSEFRAME	28
+#define RSV_RXUNKNOWNOPCODE	29
+#define RSV_RXTYPEVLAN		30
+
+#define RSV_SIZE		6
+#define RSV_BITMASK(x)		(1 << ((x) - 16))
+#define RSV_GETBIT(x, y)	(((x) & RSV_BITMASK(y)) ? 1 : 0)
+
+
+/* SPI operation codes */
+#define ENC28J60_READ_CTRL_REG  0x00
+#define ENC28J60_READ_BUF_MEM   0x3A
+#define ENC28J60_WRITE_CTRL_REG 0x40
+#define ENC28J60_WRITE_BUF_MEM  0x7A
+#define ENC28J60_BIT_FIELD_SET  0x80
+#define ENC28J60_BIT_FIELD_CLR  0xA0
+#define ENC28J60_SOFT_RESET	    0xFF
+
+
+/* buffer boundaries applied to internal 8K ram
+ * entire available packet buffer space is allocated.
+ * Give TX buffer space for one full ethernet frame (~1500 bytes)
+ * receive buffer gets the rest */
+#define TXSTART_INIT		0x1A00
+#define TXEND_INIT		0x1FFF
+
+/* Put RX buffer at 0 as suggested by the Errata datasheet */
+#define RXSTART_INIT		0x0000
+#define RXEND_INIT		0x19FF
+
 /* maximum ethernet frame length */
-#define MAX_FRAMELEN    1518
+#define MAX_FRAMELEN		1518
+
+/* Preferred half duplex: LEDA: Link status LEDB: Rx/Tx activity */
+#define ENC28J60_LAMPS_MO
 
 typedef struct enc28j60_spi_device_t {
     spi_inst_t *bus;
     uint32_t cs;
     uint32_t reset;
+    bool debug;
 } enc28j60_spi_device;
 
 int32_t enc28j20_initialize(enc28j60_spi_device *device);
-void enc28j60_hw_disable(enc28j60_spi_device *device);
-void enc28j60_hw_enable(enc28j60_spi_device *device);
 
-void enc28j20_initialize_rx_fifo(enc28j60_spi_device *device, uint16_t start, uint16_t end);
-void enc28j20_initialize_tx_fifo(enc28j60_spi_device *device, uint16_t start, uint16_t end);
-int32_t enc28j60_spi_read(enc28j60_spi_device *device, uint8_t reg, uint8_t *buffer, size_t buffer_length);
-int32_t enc28j60_spi_write_control(enc28j60_spi_device *device, uint8_t reg, uint8_t data);
-int32_t enc28j60_spi_write_phy(enc28j60_spi_device *device, uint8_t reg, uint16_t data);
-int16_t enc28j60_spi_read_phy(enc28j60_spi_device *device, uint8_t reg);
-void enc28j60_spi_bitfield_clear(enc28j60_spi_device *device, uint8_t reg, uint8_t data);
-void enc28j60_spi_bitfield_set(enc28j60_spi_device *device, uint8_t reg, uint8_t data);
-uint8_t enc28j60_get_revision(enc28j60_spi_device *device);
-int32_t enc28j60_spi_reset(enc28j60_spi_device *device);
-int32_t enc28j60_set_bank(enc28j60_spi_device *device, uint8_t bank);
-int32_t enc28j60_set_mac(enc28j60_spi_device *device, uint8_t *address);
-void enc28j60_check_link_status(enc28j60_spi_device *device);
+void enc28j60_write_op(enc28j60_spi_device *device, uint8_t op, uint8_t address, uint8_t data);
+uint8_t enc28j60_read_op(enc28j60_spi_device *device, uint8_t op, uint8_t address);
+void enc28j60_set_bank(enc28j60_spi_device *device, uint8_t address);
+uint8_t enc28j60_read(enc28j60_spi_device *device, uint8_t address);
+void enc28j60_write(enc28j60_spi_device *device, uint8_t address, uint8_t data);
+void enc28j60_phy_write(enc28j60_spi_device *device, uint8_t address, uint16_t data);
+uint16_t enc28j60_phy_read(enc28j60_spi_device *device, uint8_t address);
+uint8_t enc28j60_get_rev(enc28j60_spi_device *device);
 
 #endif // ENC28J60_H
