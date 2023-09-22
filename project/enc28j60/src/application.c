@@ -1,5 +1,15 @@
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
+
+#include "lwip/inet.h"
+#include "lwip/etharp.h"
+#include "lwip/tcp.h"
+#include "lwip/netif.h"
+#include "lwip/init.h"
+#include "lwip/stats.h"
+#include "lwip/dhcp.h"
+#include "lwip/timeouts.h"
 
 #include "core/logger.h"
 #include "core/console/console.h"
@@ -17,7 +27,10 @@
 
 #define UNIT_MHZ(x) x * 1000000
 
+#define ETHERNET_MTU 1500
+
 enc28j60_spi_device ethernet_controller;
+static const uint8_t mac[6] = {0xAA, 0x6F, 0x77, 0x47, 0x75, 0x8C};
 
 void initialize_pinmux()
 {
@@ -141,11 +154,59 @@ uint32_t phy_read(int32_t argc, char **argv)
     return error;
 }
 
+static err_t netif_output(struct netif *netif, struct pbuf *p)
+{
+    LINK_STATS_INC(link.xmit);
+
+    // lock_interrupts();
+    // pbuf_copy_partial(p, mac_send_buffer, p->tot_len, 0);
+    /* Start MAC transmit here */
+
+    printf("enc28j60: Sending packet of len %d\n", p->len);
+    enc28j60_packet_send(&ethernet_controller, p->len, (uint8_t *)p->payload);
+    // pbuf_free(p);
+
+    // error sending
+    if(enc28j60_read(&ethernet_controller, ESTAT) & ESTAT_TXABRT) {
+        // a seven-byte transmit status vector will be
+        // written to the location pointed to by ETXND + 1,
+        printf("ERR - transmit aborted\n");
+    }
+
+    if(enc28j60_read(&ethernet_controller, EIR) & EIR_TXERIF) {
+        printf("ERR - transmit interrupt flag set\n");
+    }
+
+    // unlock_interrupts();
+    return ERR_OK;
+}
+
+static void netif_status_callback(struct netif *netif)
+{
+    LOG_INFO("netif status changed %s\n", ip4addr_ntoa(netif_ip4_addr(netif)));
+}
+
+static err_t netif_initialize(struct netif *netif)
+{
+    netif->linkoutput = netif_output;
+    netif->output = etharp_output;
+    // netif->output_ip6 = ethip6_output;
+    netif->mtu = ETHERNET_MTU;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_IGMP | NETIF_FLAG_MLD6;
+    // MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, 100000000);
+    SMEMCPY(netif->hwaddr, mac, sizeof(netif->hwaddr));
+    netif->hwaddr_len = sizeof(netif->hwaddr);
+    return ERR_OK;
+}
+
 void initialize_ethernet_controller(enc28j60_spi_device *device)
 {
     LOG_INFO("Initialize Ethernet Controller\n");
 
+    net_device netdev = {{0xAA, 0x6F, 0x77, 0x47, 0x75, 0x8C}, 0, false};
+
     // Initialize device settings
+    device->net = &netdev;
     device->bus = spi0;
     device->cs = PIN_SPI0_CS;
     device->reset = PIN_ETHCTL_RESET;
@@ -172,6 +233,30 @@ void initialize_ethernet_controller(enc28j60_spi_device *device)
     // enc28j60_check_link_status(device);
 }
 
+void initialize_ethernet()
+{
+    LOG_INFO("Initialize Ethernet\n");
+    ip_addr_t addr, mask, static_ip;
+    IP4_ADDR(&static_ip, 192, 168, 1, 111);
+    IP4_ADDR(&mask, 255, 255, 255, 0);
+    IP4_ADDR(&addr, 192, 168, 1, 1);
+
+    struct netif netif;
+    lwip_init();
+    // IP4_ADDR_ANY if using DHCP client
+    netif_add(&netif, &static_ip, &mask, &addr, NULL, netif_initialize, netif_input);
+    netif.name[0] = 'e';
+    netif.name[1] = '0';
+    // netif_create_ip6_linklocal_address(&netif, 1);
+    // netif.ip6_autoconfig_enabled = 1;
+    netif_set_status_callback(&netif, netif_status_callback);
+    netif_set_default(&netif);
+    netif_set_up(&netif);
+
+    dhcp_inform(&netif);
+    enc28j60_initialize(&ethernet_controller);
+}
+
 #define CMD_DUMP        "dump"
 #define CMD_SPI_READ    "read"
 #define CMD_SPI_WRITE   "write"
@@ -192,6 +277,7 @@ int32_t application_run()
     initialize_neopixel(&neopixel);
 
     initialize_ethernet_controller(&ethernet_controller);
+    // initialize_ethernet();
 
     LOG_INFO("ENC28J60 Version: %s\n", ENC28J60_VERSION);
     LOG_INFO("  Common Version: %s\n", CORE_VERSION);
@@ -211,10 +297,63 @@ int32_t application_run()
     console_add_command(CMD_PHY_READ, &cmd_phy_read);
     multicore_launch_core1(&console_run);
 
+    // LOG_INFO("Initialize Ethernet\n");
+    // ip_addr_t addr, mask, static_ip;
+    // IP4_ADDR(&static_ip, 192, 168, 1, 8);
+    // IP4_ADDR(&mask, 255, 255, 255, 0);
+    // IP4_ADDR(&addr, 192, 168, 1, 1);
+
+    // struct netif netif;
+    // lwip_init();
+    // // IP4_ADDR_ANY if using DHCP client
+    // netif_add(&netif, &static_ip, &mask, &addr, NULL, netif_initialize, netif_input);
+    // netif.name[0] = 'e';
+    // netif.name[1] = '0';
+    // // netif_create_ip6_linklocal_address(&netif, 1);
+    // // netif.ip6_autoconfig_enabled = 1;
+    // netif_set_status_callback(&netif, netif_status_callback);
+    // netif_set_default(&netif);
+    // netif_set_up(&netif);
+
+    // dhcp_inform(&netif);
+
+    enc28j60_hw_disable(&ethernet_controller);
+    enc28j60_initialize(&ethernet_controller);
+    enc28j60_hw_enable(&ethernet_controller);
+    enc28j60_check_link_status(&ethernet_controller);
+
+    uint8_t *eth_pkt = malloc(ETHERNET_MTU);
+    struct pbuf *p = NULL;
+
+    // netif_set_link_up(&netif);
+
     // Main thread loop
     bool toggle = true;
     while(true) {
-        sleep_ms(1000);
+        uint16_t packet_len = enc28j60_packet_receive(&ethernet_controller, ETHERNET_MTU, (uint8_t*)eth_pkt);
+
+        if (packet_len) {
+            LOG_INFO("enc: Received packet of length = %d\n", packet_len);
+            // p = pbuf_alloc(PBUF_RAW, packet_len, PBUF_POOL);
+            // pbuf_take(p, eth_pkt, packet_len);
+            // free(eth_pkt);
+            // eth_pkt = malloc(ETHERNET_MTU);
+        } else {
+            // printf("enc: no packet received\n");
+        }
+
+        if (packet_len && p != NULL) {
+            LINK_STATS_INC(link.recv);
+
+            // if (netif.input(p, &netif) != ERR_OK) {
+            //     pbuf_free(p);
+            // }
+        }
+
+        /* Cyclic lwIP timers check */
+        sys_check_timeouts();
+
+
         if(toggle) {
             ws2812_fill(&neopixel, WS2812_RGB(0, 25, 0));
             ws2812_show(&neopixel);
@@ -223,6 +362,7 @@ int32_t application_run()
             ws2812_show(&neopixel);
         }
         toggle = !toggle;
+        sleep_ms(1000);
     }
 
     // For posterity

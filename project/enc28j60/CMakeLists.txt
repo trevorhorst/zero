@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(
     enc28j60
     DESCRIPTION "ENC28J60 Testing"
-    VERSION 0.0.2
+    VERSION 0.1.0
     LANGUAGES C ASM
 )
 
@@ -16,6 +16,7 @@ set(
     HEADERS
     ${HEADERS}
     include/project/application.h
+    lwip/lwipopts.h
 )
 
 add_library(
@@ -35,6 +36,8 @@ target_link_libraries(
         core
         pico_multicore
         hardware_spi
+        pico_lwip
+        pico_lwip_nosys
 )
 
 # Specifies include directories to use when compiling a given target
@@ -43,6 +46,7 @@ target_include_directories(
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lwip>
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

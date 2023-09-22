@@ -305,22 +305,45 @@
 /* Preferred half duplex: LEDA: Link status LEDB: Rx/Tx activity */
 #define ENC28J60_LAMPS_MO
 
+typedef struct net_device_t{
+    uint8_t dev_addr[6];
+    uint16_t next_packet_ptr;
+    bool hw_enable;
+} net_device;
+
 typedef struct enc28j60_spi_device_t {
+    net_device *net;
     spi_inst_t *bus;
     uint32_t cs;
     uint32_t reset;
     bool debug;
 } enc28j60_spi_device;
 
-int32_t enc28j20_initialize(enc28j60_spi_device *device);
+int32_t enc28j60_initialize(enc28j60_spi_device *device);
 
+// Main chip functionality
 void enc28j60_write_op(enc28j60_spi_device *device, uint8_t op, uint8_t address, uint8_t data);
 uint8_t enc28j60_read_op(enc28j60_spi_device *device, uint8_t op, uint8_t address);
+void enc28j60_write_buffer(enc28j60_spi_device *device, uint16_t len, uint8_t *data);
+void enc28j60_read_buffer(enc28j60_spi_device *device, uint16_t len, uint8_t *data);
 void enc28j60_set_bank(enc28j60_spi_device *device, uint8_t address);
 uint8_t enc28j60_read(enc28j60_spi_device *device, uint8_t address);
 void enc28j60_write(enc28j60_spi_device *device, uint8_t address, uint8_t data);
 void enc28j60_phy_write(enc28j60_spi_device *device, uint8_t address, uint16_t data);
 uint16_t enc28j60_phy_read(enc28j60_spi_device *device, uint8_t address);
+
+void enc28j60_packet_send(enc28j60_spi_device *device, uint16_t len, uint8_t *packet);
+uint16_t enc28j60_packet_receive(enc28j60_spi_device *device, uint16_t maxlen, uint8_t *packet);
+
+// Relies on the functions above
+void enc28j60_init(enc28j60_spi_device *device);
+void enc28j60_hw_disable(enc28j60_spi_device *device);
+void enc28j60_hw_enable(enc28j60_spi_device *device);
+
+void enc28j60_soft_reset(enc28j60_spi_device *device);
 uint8_t enc28j60_get_rev(enc28j60_spi_device *device);
+void enc28j60_set_mac(enc28j60_spi_device *device);
+
+void enc28j60_check_link_status(enc28j60_spi_device *device);
 
 #endif // ENC28J60_H
