@@ -1,6 +1,20 @@
 #include "core/logger.h"
 #include "core/drivers/enc28j60.h"
 
+void enc28j60_net_open(enc28j60_spi_device *device)
+{
+    enc28j60_hw_disable(device);
+    if(enc28j60_initialize(device)) {
+        LOG_INFO("Hardware reset failed\n");
+        return;
+    }
+    enc28j60_set_mac(device);
+
+    enc28j60_hw_enable(device);
+
+    enc28j60_check_link_status(device);
+}
+
 int32_t enc28j60_initialize(enc28j60_spi_device *device)
 {
     gpio_put(device->cs, 0);

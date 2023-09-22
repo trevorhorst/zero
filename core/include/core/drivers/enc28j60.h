@@ -336,6 +336,7 @@ void enc28j60_packet_send(enc28j60_spi_device *device, uint16_t len, uint8_t *pa
 uint16_t enc28j60_packet_receive(enc28j60_spi_device *device, uint16_t maxlen, uint8_t *packet);
 
 // Relies on the functions above
+void enc28j60_net_open(enc28j60_spi_device *device);
 void enc28j60_init(enc28j60_spi_device *device);
 void enc28j60_hw_disable(enc28j60_spi_device *device);
 void enc28j60_hw_enable(enc28j60_spi_device *device);
