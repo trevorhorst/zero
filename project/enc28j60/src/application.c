@@ -276,7 +276,32 @@ int32_t application_run()
     ws2812_device neopixel;
     initialize_neopixel(&neopixel);
 
-    initialize_ethernet_controller(&ethernet_controller);
+    LOG_INFO("Initialize Ethernet Controller\n");
+
+    net_device netdev = {{0xAA, 0x6F, 0x77, 0x47, 0x75, 0x8C}, 0, false};
+
+    // Initialize device settings
+    ethernet_controller.net = &netdev;
+    ethernet_controller.bus = spi0;
+    ethernet_controller.cs = PIN_SPI0_CS;
+    ethernet_controller.reset = PIN_ETHCTL_RESET;
+    ethernet_controller.debug = true;
+
+    spi_init(spi0, UNIT_MHZ(10));
+    spi_set_format(
+        spi0,
+        8,
+        SPI_CPOL_0,
+        SPI_CPHA_0,
+        SPI_MSB_FIRST
+    );
+
+    spi_reset(0, NULL);
+
+    LOG_INFO("ENC28J60 Rev: %02X\n", enc28j60_get_rev(&ethernet_controller));
+
+
+    // initialize_ethernet_controller(&ethernet_controller);
     // initialize_ethernet();
 
     LOG_INFO("ENC28J60 Version: %s\n", ENC28J60_VERSION);
@@ -297,30 +322,31 @@ int32_t application_run()
     console_add_command(CMD_PHY_READ, &cmd_phy_read);
     multicore_launch_core1(&console_run);
 
-    // LOG_INFO("Initialize Ethernet\n");
-    // ip_addr_t addr, mask, static_ip;
-    // IP4_ADDR(&static_ip, 192, 168, 1, 8);
-    // IP4_ADDR(&mask, 255, 255, 255, 0);
-    // IP4_ADDR(&addr, 192, 168, 1, 1);
+    LOG_INFO("Initialize Ethernet\n");
+    ip_addr_t addr, mask, static_ip;
+    IP4_ADDR(&static_ip, 192, 168, 0, 111);
+    IP4_ADDR(&mask, 255, 255, 255, 0);
+    IP4_ADDR(&addr, 192, 168, 0, 1);
 
-    // struct netif netif;
-    // lwip_init();
-    // // IP4_ADDR_ANY if using DHCP client
-    // netif_add(&netif, &static_ip, &mask, &addr, NULL, netif_initialize, netif_input);
-    // netif.name[0] = 'e';
-    // netif.name[1] = '0';
-    // // netif_create_ip6_linklocal_address(&netif, 1);
-    // // netif.ip6_autoconfig_enabled = 1;
-    // netif_set_status_callback(&netif, netif_status_callback);
-    // netif_set_default(&netif);
-    // netif_set_up(&netif);
+    struct netif netif;
+    lwip_init();
+    // IP4_ADDR_ANY if using DHCP client
+    netif_add(&netif, &static_ip, &mask, &addr, NULL, netif_initialize, netif_input);
+    netif.name[0] = 'e';
+    netif.name[1] = '0';
+    // netif_create_ip6_linklocal_address(&netif, 1);
+    // netif.ip6_autoconfig_enabled = 1;
+    netif_set_status_callback(&netif, netif_status_callback);
+    netif_set_default(&netif);
+    netif_set_up(&netif);
 
     // dhcp_inform(&netif);
 
-    enc28j60_hw_disable(&ethernet_controller);
-    enc28j60_initialize(&ethernet_controller);
-    enc28j60_hw_enable(&ethernet_controller);
-    enc28j60_check_link_status(&ethernet_controller);
+    enc28j60_net_open(&ethernet_controller);
+    // enc28j60_hw_disable(&ethernet_controller);
+    // enc28j60_initialize(&ethernet_controller);
+    // enc28j60_hw_enable(&ethernet_controller);
+    // enc28j60_check_link_status(&ethernet_controller);
 
     uint8_t *eth_pkt = malloc(ETHERNET_MTU);
     struct pbuf *p = NULL;
@@ -334,10 +360,10 @@ int32_t application_run()
 
         if (packet_len) {
             LOG_INFO("enc: Received packet of length = %d\n", packet_len);
-            // p = pbuf_alloc(PBUF_RAW, packet_len, PBUF_POOL);
-            // pbuf_take(p, eth_pkt, packet_len);
-            // free(eth_pkt);
-            // eth_pkt = malloc(ETHERNET_MTU);
+            p = pbuf_alloc(PBUF_RAW, packet_len, PBUF_POOL);
+            pbuf_take(p, eth_pkt, packet_len);
+            free(eth_pkt);
+            eth_pkt = malloc(ETHERNET_MTU);
         } else {
             // printf("enc: no packet received\n");
         }
@@ -345,9 +371,9 @@ int32_t application_run()
         if (packet_len && p != NULL) {
             LINK_STATS_INC(link.recv);
 
-            // if (netif.input(p, &netif) != ERR_OK) {
-            //     pbuf_free(p);
-            // }
+            if (netif.input(p, &netif) != ERR_OK) {
+                pbuf_free(p);
+            }
         }
 
         /* Cyclic lwIP timers check */
