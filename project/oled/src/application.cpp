@@ -8,6 +8,8 @@
 
 #define PIN_I2C1_SDA    26
 #define PIN_I2C1_SCL    27
+#define PIN_INCREASE_DEX   2
+#define PIN_DECREASE_DEX   3
 
 #define I2C_BUS_SPEED_KHZ(x) x * 1000
 
@@ -15,6 +17,41 @@
 
 #define SPRITE_WIDTH    56
 #define SPRITE_HEIGHT   56
+
+static uint32_t debounce_generate_fact = to_ms_since_boot(get_absolute_time());
+static const uint32_t debounce_delay_time = 250;
+static int32_t dex_number = 1;
+static int8_t trigger_update = 0;
+
+void generate_fact(uint gpio, uint32_t events)
+{
+    uint32_t currentTime = to_ms_since_boot(get_absolute_time());
+    if(gpio == PIN_INCREASE_DEX) {
+        if((currentTime - debounce_generate_fact) > debounce_delay_time) {
+            // Increase SPI spee
+            dex_number++;
+            trigger_update = 1;
+            if(dex_number < 1) {
+                dex_number = 151;
+            } else if(dex_number > 151) {
+                dex_number = 1;
+            }
+            debounce_generate_fact = currentTime;
+        }
+    } else if(gpio == PIN_DECREASE_DEX) {
+        if((currentTime - debounce_generate_fact) > debounce_delay_time) {
+            // Decrease SPI speed
+            dex_number--;
+            trigger_update = 1;
+            if(dex_number < 1) {
+                dex_number = 151;
+            } else if(dex_number > 151) {
+                dex_number = 1;
+            }
+            debounce_generate_fact = currentTime;
+        }
+    }
+}
 
 void index_to_sprite(uint32_t index, BmpSpriteSheet *ss, BmpSprite *sprite)
 {
@@ -36,6 +73,11 @@ int32_t application_run()
     stdio_init_all();
 
     sleep_ms(1000);
+    LOG_INFO("Initialize GPIO...\n");
+    // Initialize IRQ
+    gpio_set_irq_enabled_with_callback(PIN_INCREASE_DEX, GPIO_IRQ_EDGE_RISE, true, &generate_fact);
+    gpio_set_irq_enabled_with_callback(PIN_DECREASE_DEX, GPIO_IRQ_EDGE_RISE, true, &generate_fact);
+
 
     LOG_INFO("Initializing I2C...\n");
     i2c_init(i2c1, I2C_BUS_SPEED_KHZ(1000));
@@ -60,7 +102,8 @@ int32_t application_run()
     sprite.width = SPRITE_WIDTH;
     sprite.invert = 0;
     sprite.magnify = 1;
-    sprite.rotate = CANVAS_ROTATE_270;
+    // sprite.rotate = CANVAS_ROTATE_270;
+    sprite.rotate = CANVAS_ROTATE_90;
 
     BmpSprite font_sprite;
     font_sprite.height = 8;
@@ -115,19 +158,36 @@ int32_t application_run()
     uint32_t framestart = 0;
     uint32_t frameend = 0;
     uint32_t frames = 0;
+    trigger_update = 1;
+
     do {
+        // if(trigger_update) {
+        //     // Select the pokemon sprite
+        //     // index_to_sprite(dex_number, &ss, &sprite);
+        //     index_to_sprite(1, &ss_font, &font_sprite);
+
+        //     for(uint32_t layer = 0; layer < 3; layer++) {
+        //         canvas_draw_grayscale_bmp_sprite(&framebuffer[layer], &(ss_grayscale.bitmap),
+        //                                         &sprite, layer, offset_x, offset_y);
+        //     }
+        //     trigger_update = 0;
+        // }
+
         if((dexNumber < 1) || (dexNumber > 151)) {
             // Reset the dex counter if we go out of bounds
             dexNumber = 1;
-        } 
+        }
 
-        // Select the pokemon sprite
-        index_to_sprite(dexNumber, &ss, &sprite);
-        // index_to_sprite(1, &ss_font, &font_sprite);
+        if(trigger_update) {
+            // Select the pokemon sprite
+            index_to_sprite(dex_number, &ss, &sprite);
+            // index_to_sprite(1, &ss_font, &font_sprite);
 
-        for(uint32_t layer = 0; layer < 3; layer++) {
-            canvas_draw_grayscale_bmp_sprite(&framebuffer[layer], &(ss_grayscale.bitmap),
-                                             &sprite, layer, offset_x, offset_y);
+            for(uint32_t layer = 0; layer < 3; layer++) {
+                canvas_draw_grayscale_bmp_sprite(&framebuffer[layer], &(ss_grayscale.bitmap),
+                                                 &sprite, layer, offset_x, offset_y);
+            }
+            trigger_update = 0;
         }
 
         ssd1306_reset_cursor(&dev);
@@ -144,7 +204,7 @@ int32_t application_run()
             frameend = to_ms_since_boot(get_absolute_time());
         }
 
-        dexNumber++;
+        // dexNumber++;
 
         printf("FPS: %d\n", frames);
     } while(true);
